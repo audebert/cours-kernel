@@ -1,0 +1,48 @@
+Module Kernel II:
+=================
+Début: Nov 22, 2014
+Fin: Mar 14, 2015
+
+* Cours 1: Bootstrap
+    Intervenant: Pierre Surply
+    Date: Nov 22, 2014
+
+* Cours 2: Virtual Memory
+    Intervenant: Pierre Surply
+    Date: Nov 29, 2014
+
+* Defense 1:
+    Intervenants: Pierre Surply / Rémi Audebert
+    Date: Dec 13, 2014
+
+* Cours 3: Scheduling
+    Intervenant: Pierre Surply
+    Date: Dec 20, 2014
+
+* Cours 4: Userland
+    Intervenant: Pierre Surply
+    Date: Jan 17, 2015
+
+* Defense 2:
+    Intervenants: Pierre Surply / Rémi Audebert
+    Date: Jan 24, 2015
+
+* Cours 5: Further in the kernel
+    Intervenant: Pierre Surply
+    Date: Jan 31, 2015
+
+* Follow-up 1:
+    Intervenants: Pierre Surply / Rémi Audebert
+    Date: Feb 7, 2015
+
+* Defense 3:
+    Intervenants: Pierre Surply / Rémi Audebert
+    Date: Feb 14, 2015
+
+* Follow-up 2:
+    Intervenants: Pierre Surply / Rémi Audebert
+    Date: Feb 28, 2015
+
+* Final Defense:
+    Intervenants: Pierre Surply / Rémi Audebert
+    Date: Mar 14, 2015
