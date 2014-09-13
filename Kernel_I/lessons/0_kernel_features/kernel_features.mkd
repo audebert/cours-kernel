@@ -1,0 +1,531 @@
+% Kernel I - Kernel features
+% Rémi Audebert - Pierre Surply
+% 2014-09-13
+
+# Introduction
+
+### What is a kernel?
+
+The kernel is the part of the system that:
+
+- manages the hardware
+- allocates resources eg. memory pages or CPU cycles
+- is responsible for the file system and network communication
+- provides an abstraction layer for the applications
+
+# The Linux kernel
+
+#### Main features
+
+- Portable
+- Stable
+- Mature
+- Secure
+- Robust
+
+### Who is behind Linux?
+
+- An open source community
+- Around 1200 developers for one release
+- Around 200 maintainers
+- Around 80% of the changes are sponsored
+- Linus Torvalds makes the official releases
+
+### Current status
+
+- GPL2
+- Latest stable release: 3.16.2 (2014-09-05)
+- Latest development release: 3.17-rc4 (2014-09-07)
+- Regular 2-3 month releases:
+    - deliver stable updates
+    - significant new features
+    - added device support
+    - improved performance
+
+### Usage and hardware support
+
+Linux supports more computer architecture than any other OS.
+
+\ ![TOP500 OS from wikimedia](Operating_systems_used_on_top_500_supercomputers.png)
+
+### Android
+
+- Long time fork of Linux:
+- Some sources in `drivers/staging/android`
+- Linaro leading the upstreaming effort:
+    - https://blueprints.launchpad.net/linux-linaro?searchtext=upstream
+
+#### Usage stats
+
+> Adroid now has 1 billion monthly active users
+> -- Sundar Pichai
+
+# Meeting Linux
+
+### Overview
+
+\ ![Linux kernel map](Linux_kernel_map.png)
+
+### The source
+
+- https://www.kernel.org/
+- git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git (1.5G)
+
+### The kernel source tree
+
+- `arch` Architecture-specific code
+- `block` Block I/O layer
+- `crypto` Cryptographic API
+- `Documentation` Kernel source documentation
+- `drivers` Device drivers (except sound ones)
+- `firmware` Device firmware needed for some devices
+- `fs` Filesystems infrastructure
+- `include` Kernel headers
+    - `include/linux` Core kernel headers
+    - `include/uapi` User space API headers
+- `init` Kernel initialization
+- `ipc` System V InterProcess Communication (sem, shm, msgqueue)
+- `kernel` Linux kernel core
+- `lib` Routine library
+- `mm` Memory management
+- `net` Network support code
+- `samples` Sample code (trace, kobject, krpobes)
+- `scripts` Scripts for internal of external use
+- `security` Security frameworks
+- `sound` Sound code and drivers
+- `tools` User space tools
+- `usr` Generate the initramfs
+- `virt` Virtualization infrastructure (kvm)
+
+### The kernel source tree
+
+- `COPYING` The kernel licence (GPLv2)
+- `CREDITS` The people who have contributed to the kernel
+- `Kbuild` Kernel build system
+- `Kconfig` Description of configuration parameters
+- `MAINTAINERS` Maintainer of subsystems and drivers
+- `Makefile` Base kernel Makefile (ARCH and VERSION)
+- `README` Overview of the kernel
+- `REPORTING-BUGS` Instructions for reporting bugs
+
+### Configuring the kernel
+
+- The kernel is a single file, result of the compilation process.
+- Compile-time options (`-D` flags) can be used to select which features are
+  compiled-in and their settings.
+- However, after the boot process, it can load module from the filesystem at
+  runtime to extend its features. Each module is a single file.
+
+- Configuring the kernel is:
+    - choosing what's going into the main file, and what will be built as
+      modules.
+    - setting various options
+
+### Kernel options
+
+- Options have the form `CONFIG_FEATURE` and a type, eg.
+    - `CONFIG_MODULES` boolean (true/false)
+    - `CONFIG_INITRAMFS_ROOT_UID` integer
+    - `CONFIG_INITRAMFS_SOURCE` string
+    - `CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE` hex
+    - `CONFIG_BTRFS_FS` tristate (true/module/false)
+
+### Kernel options dependencies
+
+- Options can depends on others.
+- Two types of dependencies:
+    - A `select` B, enabling A enables B
+    - A `depends on` B, A is not visible until B is enabled
+
+### Kconfig
+
+\small
+
+```
+config BTRFS_FS
+    tristate "Btrfs filesystem support"
+    select CRYPTO
+    select CRYPTO_CRC32C
+    select ZLIB_INFLATE
+    select ZLIB_DEFLATE
+    select LZO_COMPRESS
+    select LZO_DECOMPRESS
+    select RAID6_PQ
+    select XOR_BLOCKS
+
+    help
+      Btrfs is a general purpose copy-on-write filesystem with extents,
+      writable snapshotting, support for multiple devices and many more
+      features focused on fault tolerance, repair and easy administration.
+
+      [...]
+```
+
+### Configuring the kernel
+
+- The set of options you choose depends on:
+    - The features you need (profiling? virtualization? ...)
+    - The hardware you what the kernel to support (drivers)
+
+### Config files
+
+#### `.config`
+
+Simple text files, `key=value` format.
+
+#### Default `.config` files
+
+- `make defconfig` New config with default from $ARCH supplied defconfig
+
+#### Editing `.config` files
+
+- `make config` Text based
+- `make menuconfig`, `make nconfig` Menu/Ncurses interface
+- `make xconfig`, `make gconfig` Graphical interface
+- `make oldconfig`  Upgrade .config with options from the new release
+
+### Vendor kernels
+
+Linux distributions typically enable a lot of kernel features and drivers, most
+of them compiled as modules.
+
+#### Read the config file of your kernel
+
+Require `CONFIG_IKCONFIG_PROC`: `zcat /proc/config.gz`
+
+### Build
+
+- Only interact with the top-directory Makefile
+
+```bash
+$ make help # List targets
+$ make menuconfig # Edit .config
+$ make # Build the kernel and modules
+```
+
+Produces:
+
+- ...
+- `vmlinux`: ELF object of the kernel, cannot be booted
+- `arch/x86/boot/bzImage`: bootable compressed kernel image
+- `**/*.ko`: Modules
+
+### More targets
+
+- `make modules`: build/rebuild modules
+- `make headers_install`: "install" headers in the local `usr/`
+- `make modules_install`: install to `/lib/modules/KVER`
+    - `INSTALL_MOD_PATH=dir/` to select the directory
+
+# Interacting with Linux
+
+### The kernel parameters
+
+- It is a string from runtime configuration
+    - no recompilation
+    - can be builtin, using the CONFIG_CMDLINE option
+- Many kernel options, examples:
+    - `root=/dev/sda1` the root filesystem
+    - `console=ttyS0` where to write kernel messages
+    - `debug`, `loglevel=7` kernel verbosity
+    - `usbcore.blinkenlights=true` also available for modules
+- More documentation: `Documentation/kernel-parameters.txt`
+
+### System calls (syscalls)
+
+- The system call is the fundamental interface between an application and the
+  Linux kernel.
+- Typically accessed via wrapper functions of the libc. The name of the wrapper
+  function is usually the same as the name of the system call that it invokes.
+- More than 320 on x86, some are architecture-specific, but most are common.
+- One of the key component of Linux' maturity.
+
+More details in the next lessons!
+
+### The kernel log
+
+- The kernel stores msgs in a circular log buffer:
+    - `/proc/ksmg` for raw output
+    - `/dev/kmsg` for structured message reading
+- The `dmsg` tool (diagnostic message) can be used to read those messages
+
+### Loadable kernel modules (LKM)
+
+#### Loading
+
+- Require `CONFIG_MODULES`
+- `insmod`: plug a `.ko` file into the kernel
+- `modprobe`: loads modules and their dependencies
+- Both can handle module parameters:
+    - `sudo insmod ./snd-intel8x0m.ko index=-2`
+
+#### Unloading
+
+- Require `CONFIG_MODULE_UNLOAD`
+- `rmmod`: unplug the module
+- `modprobe -r`: preferred
+
+#### Info
+
+- `lsmod`: Show the status of modules in the Linux Kernel
+- `modinfo`: Show information about a Linux Kernel module
+
+### VFS
+
+- `proc`: (`/proc`) processes info, raw stuff, etc.
+- `sysfs`: (`/sys`) structured information about various kernel subsystems,
+  tied to `kobjects`
+- `devtmpfs`: (`/dev`) kernel populated devices nodes
+
+More details in the next lessons!
+
+# Writing code for Linux
+
+## Tools
+
+### Essential developer tools
+
+- The C language (ISO C99 and gnu extensions)
+- GNU Make
+- Git
+
+### Useful developer tools
+
+- `cscope`: Browse source code
+- LXR: Linux Cross Reference
+- `scripts/*`
+
+### Cscope
+
+- http://cscope.sourceforge.net/
+- Built in VIM and Emacs
+- You must generate the database.
+    - Use `make cscope` to generate the database of your architecture
+- Search:
+    - Symbol definition
+    - Symbol usage
+    - Function callers/callee
+    - Text
+    - ...
+
+### LXR
+
+- http://lxr.free-electrons.com
+
+## Code
+
+### Coding style
+
+- Indentation as tabs
+- Tabs are 8 spaces
+- No more than 80 char per line
+
+> First off, I'd suggest printing out a copy of the GNU coding standards, and
+> NOT read it.  Burn them, it's a great symbolic gesture.
+> -- Documentation/CodingStyle
+
+### Coding style
+
+```c
+int foo(void)
+{
+	return 0;
+}
+```
+
+### Coding style
+
+```c
+if (cond) {
+	do_foo();
+	do_bar();
+}
+```
+
+### Coding style
+
+```c
+if (cond) {
+	do_foo();
+	do_bar();
+} else {
+	do_baz();
+}
+```
+
+### Coding style
+
+```c
+if (cond)
+	do_foo();
+else
+	do_baz();
+```
+
+### Coding style
+
+```c
+int foo(void)
+{
+    struct bar *r;
+
+    r = kmalloc(sizeof(*r), GFP_KERNEL);
+    if (!r)
+        return -ENOMEM;
+
+    return 0;
+}
+```
+
+### Kernelspace
+
+- No access to the libc
+- No memory protection
+- No floating-point operations
+- Fixed-size stack
+- Preemptive and SMP: synchronization and concurrency are major concerns
+
+### Unique bugs
+
+#### https://lkml.org/lkml/2014/7/24/584 
+
+> Somebody needs to raise that as a gcc bug. Because it damn well is some
+> seriously crazy shit.
+> -- Linus Torvalds
+
+## Your first module
+
+### Where to put-it?
+
+Two alternatives:
+
+- Inside the official kernel tree:
+    - Integrated in the kernel repository
+    - Can be built statically
+    - Supported by the community: debug and update
+- Out of tree:
+    - In a directory outside the kernel source
+    - Needs to be built separately
+
+### Hello Module
+
+```c
+/*
+ * hello.c
+ *
+ * Copyright 2014 Rémi Audebert <halfr@lse.epita.fr>
+ */
+
+#include <linux/init.h>
+#include <linux/module.h>
+#include <linux/printk.h>
+
+static init __init hello_init(void)
+{
+	pr_info("Hello, world!\n");
+	return 0;
+}
+
+static void __exit hello_exit(void)
+{
+	pr_info("Goodbye.\n");
+}
+
+module_init(hello_init);
+module_exit(hello_exit);
+
+MODULE_LICENCE("GPL");
+MODULE_DESCRIPTION("Hello module");
+MODULE_AUTHOR("Rémi Audebert");
+```
+
+### Explanations
+
+#### Macros
+
+- `__init`: the code is discarded after initialization (both for static and
+  module compilation)
+- `__exit`: the code is discarded if the module is built statically or if
+  module unloading is disabled
+
+#### Module setup/cleanup
+
+```c
+int mod_init(void);
+void mod_exit(void);
+```
+
+#### Module metadata
+
+- Retrievable using `modinfo`
+- Licence is important:
+    - Non free software modules have no access to GPL exported symbols
+    - Non free modules set the proprietary taint flag on the kernel
+- Also useful: `MODULE_VERSION`, `MODULE_INFO`, `MODULE_SOFTDEP`
+- More information: `include/linux/module.h`
+
+### Compiling your module
+
+Makefile:
+
+\small
+
+```Makefile
+ifeq ($(KERNELRELEASE),)
+# Assume the source tree is where the running kernel was built
+# You should set KERNELDIR in the environment if it's elsewhere
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+
+# The current directory is passed to sub-makes as argument
+PWD := $(shell pwd)
+
+modules:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+modules_install:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules_install
+clean:
+	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions
+
+.PHONY: modules modules_install clean
+else
+# called from kernel build system: just declare what our modules is
+obj-m := hello.o
+endif
+```
+
+### Submitting patches
+
+1. Commit: `git commit --signoff`
+2. Make a patch: `git format-patch origin..master`
+3. Send email: `git send-email 0001-my-commit.patch`
+
+# More documentation
+
+#### Web
+
+- http://kernelnewbies.org
+
+#### Books
+
+Warning: Linux moves fast, those books are outdated.
+
+- Linux device drivers: https://lwn.net/images/pdf/LDD3
+- Linux Kernel Development
+- Linux System Programming
+- Linux in a Nutshell
+- Understanding the Linux Kernel
+- The Linux Programming Interface
+
+# The project
+
+The aim of this project is to develop a system call in the Linux kernel.
+
+You must add a system call directly in the kernel sources, compile your kernel
+and use your new system call in a userland program. You will also have to
+provide a patch of your modifications along with a README file explaining the
+process of sources modification, kernel building and testing.
+
+Corrections will take place on your computers.
+
+Use the `blih/git` repository `Kernel_SysCall` to turn-in your work before the
+date specified on the intranet.
