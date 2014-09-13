@@ -31,9 +31,20 @@ The kernel is the part of the system that:
 - Around 80% of the changes are sponsored
 - Linus Torvalds makes the official releases
 
+### Why know Linux?
+
+> Finding Linux talent is becoming more of a priority for hiring managers.
+
+> Hiring managers are increasing the number of Linux professionals they are
+> searching for.
+
+> Knowing Linux advances careers.
+
+> -- Linux Jobs Report 2014
+
 ### Current status
 
-- GPL2
+- GPLv2
 - Latest stable release: 3.16.2 (2014-09-05)
 - Latest development release: 3.17-rc4 (2014-09-07)
 - Regular 2-3 month releases:
@@ -58,6 +69,7 @@ Linux supports more computer architecture than any other OS.
 #### Usage stats
 
 > Adroid now has 1 billion monthly active users
+>
 > -- Sundar Pichai
 
 # Meeting Linux
@@ -68,8 +80,9 @@ Linux supports more computer architecture than any other OS.
 
 ### The source
 
-- https://www.kernel.org/
-- git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git (1.5G)
+![kernel.org](kernel_org.png)
+
+- `git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git` (1.5G)
 
 ### The kernel source tree
 
@@ -85,12 +98,15 @@ Linux supports more computer architecture than any other OS.
     - `include/uapi` User space API headers
 - `init` Kernel initialization
 - `ipc` System V InterProcess Communication (sem, shm, msgqueue)
+
+### The kernel source tree
+
 - `kernel` Linux kernel core
-- `lib` Routine library
+- `lib` Routine library (lists, trees, string, etc.)
 - `mm` Memory management
-- `net` Network support code
+- `net` Network support code (not drivers!)
 - `samples` Sample code (trace, kobject, krpobes)
-- `scripts` Scripts for internal of external use
+- `scripts` Scripts for internal or external use
 - `security` Security frameworks
 - `sound` Sound code and drivers
 - `tools` User space tools
@@ -110,7 +126,7 @@ Linux supports more computer architecture than any other OS.
 
 ### Configuring the kernel
 
-- The kernel is a single file, result of the compilation process.
+- The kernel is a single file, resulting of the compilation process.
 - Compile-time options (`-D` flags) can be used to select which features are
   compiled-in and their settings.
 - However, after the boot process, it can load module from the filesystem at
@@ -154,18 +170,13 @@ config BTRFS_FS
     select XOR_BLOCKS
 
     help
-      Btrfs is a general purpose copy-on-write filesystem with extents,
-      writable snapshotting, support for multiple devices and many more
-      features focused on fault tolerance, repair and easy administration.
+      Btrfs is a general purpose copy-on-write filesystem
+      with extents, writable snapshotting, support for
+      multiple devices and many more features focused on
+      fault tolerance, repair and easy administration.
 
       [...]
 ```
-
-### Configuring the kernel
-
-- The set of options you choose depends on:
-    - The features you need (profiling? virtualization? ...)
-    - The hardware you what the kernel to support (drivers)
 
 ### Config files
 
@@ -175,14 +186,15 @@ Simple text files, `key=value` format.
 
 #### Default `.config` files
 
-- `make defconfig` New config with default from $ARCH supplied defconfig
+- `make defconfig`: new config with default from $ARCH supplied defconfig
+- `make i386_defconfig`: request defconfig from a platform
 
 #### Editing `.config` files
 
-- `make config` Text based
-- `make menuconfig`, `make nconfig` Menu/Ncurses interface
-- `make xconfig`, `make gconfig` Graphical interface
-- `make oldconfig`  Upgrade .config with options from the new release
+- `make config`: text based
+- `make menuconfig`, `make nconfig`: menu/ncurses interface
+- `make xconfig`, `make gconfig`: graphical interface
+- `make oldconfig`: upgrade .config with options from the new release
 
 ### Vendor kernels
 
@@ -191,14 +203,24 @@ of them compiled as modules.
 
 #### Read the config file of your kernel
 
-Require `CONFIG_IKCONFIG_PROC`: `zcat /proc/config.gz`
+Require `CONFIG_IKCONFIG_PROC`:
+
+```bash
+$ zcat /proc/config.gz
+CONFIG_64BIT=y
+CONFIG_X86_64=y
+CONFIG_X86=y
+CONFIG_INSTRUCTION_DECODER=y
+CONFIG_OUTPUT_FORMAT="elf64-x86-64"
+CONFIG_ARCH_DEFCONFIG="arch/x86/configs/x86_64_defconfig"
+...
+```
 
 ### Build
 
 - Only interact with the top-directory Makefile
 
 ```bash
-$ make help # List targets
 $ make menuconfig # Edit .config
 $ make # Build the kernel and modules
 ```
@@ -212,6 +234,7 @@ Produces:
 
 ### More targets
 
+- `make help`: list all available targets
 - `make modules`: build/rebuild modules
 - `make headers_install`: "install" headers in the local `usr/`
 - `make modules_install`: install to `/lib/modules/KVER`
@@ -219,11 +242,11 @@ Produces:
 
 # Interacting with Linux
 
-### The kernel parameters
+### The command line: kernel parameters
 
-- It is a string from runtime configuration
+- It is a string from runtime configuration:
     - no recompilation
-    - can be builtin, using the CONFIG_CMDLINE option
+    - can be builtin, using the `CONFIG_CMDLINE` option
 - Many kernel options, examples:
     - `root=/dev/sda1` the root filesystem
     - `console=ttyS0` where to write kernel messages
@@ -281,8 +304,6 @@ More details in the next lessons!
 
 # Writing code for Linux
 
-## Tools
-
 ### Essential developer tools
 
 - The C language (ISO C99 and gnu extensions)
@@ -299,29 +320,36 @@ More details in the next lessons!
 
 - http://cscope.sourceforge.net/
 - Built in VIM and Emacs
-- You must generate the database.
-    - Use `make cscope` to generate the database of your architecture
 - Search:
     - Symbol definition
     - Symbol usage
     - Function callers/callee
     - Text
     - ...
+- You must generate the database.
+    - Use `make cscope` to get the database of your architecture
 
-### LXR
+### LXR (http://lxr.free-electrons.com)
 
-- http://lxr.free-electrons.com
+\center
 
-## Code
+\ ![LXR home](lxr_home.png)
+
+### LXR (http://lxr.free-electrons.com)
+
+\center
+
+\ ![LXR example](lxr_example.png)
 
 ### Coding style
 
-- Indentation as tabs
+- Indentation uses tabs
 - Tabs are 8 spaces
-- No more than 80 char per line
+- No more than 80 chars per line (more a guideline than a hard rule)
 
 > First off, I'd suggest printing out a copy of the GNU coding standards, and
 > NOT read it.  Burn them, it's a great symbolic gesture.
+>
 > -- Documentation/CodingStyle
 
 ### Coding style
@@ -365,19 +393,19 @@ else
 ### Coding style
 
 ```c
-int foo(void)
+int get_bar(struct bar *p)
 {
-    struct bar *r;
+	int r;
 
-    r = kmalloc(sizeof(*r), GFP_KERNEL);
-    if (!r)
-        return -ENOMEM;
+	r = kmalloc(sizeof(*p), GFP_KERNEL);
+	if (!r)
+		return -ENOMEM;
 
-    return 0;
+	return 0;
 }
 ```
 
-### Kernelspace
+### Kernel space
 
 - No access to the libc
 - No memory protection
@@ -391,6 +419,7 @@ int foo(void)
 
 > Somebody needs to raise that as a gcc bug. Because it damn well is some
 > seriously crazy shit.
+>
 > -- Linus Torvalds
 
 ## Your first module
@@ -409,13 +438,10 @@ Two alternatives:
 
 ### Hello Module
 
-```c
-/*
- * hello.c
- *
- * Copyright 2014 Rémi Audebert <halfr@lse.epita.fr>
- */
+\scriptsize
 
+```c
+/* hello.c */
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/printk.h>
@@ -455,6 +481,8 @@ int mod_init(void);
 void mod_exit(void);
 ```
 
+### Explanations
+
 #### Module metadata
 
 - Retrievable using `modinfo`
@@ -464,11 +492,26 @@ void mod_exit(void);
 - Also useful: `MODULE_VERSION`, `MODULE_INFO`, `MODULE_SOFTDEP`
 - More information: `include/linux/module.h`
 
+### Explanations
+
+- `printk` is the kernel space `printf`.
+- Select the logging level:
+    - `pr_emerg, pr_alert, pr_crit, pr_err, pr_warn, pr_notice, pr_info, pr_debug`
+- `pr_devel` while you develop your code
+- `pr_cont` allow multiline messages
+
+#### `pr_fmt`
+
+```c
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+#include <linux/printk.h>
+...
+	pr_devel("Test.\n");
+```
+
 ### Compiling your module
 
-Makefile:
-
-\small
+\scriptsize
 
 ```Makefile
 ifeq ($(KERNELRELEASE),)
@@ -488,35 +531,25 @@ clean:
 
 .PHONY: modules modules_install clean
 else
-# called from kernel build system: just declare what our modules is
+# called from kernel build system: just declare our module
 obj-m := hello.o
 endif
 ```
 
 ### Submitting patches
 
-1. Commit: `git commit --signoff`
-2. Make a patch: `git format-patch origin..master`
-3. Send email: `git send-email 0001-my-commit.patch`
-
-# More documentation
-
-#### Web
-
-- http://kernelnewbies.org
-
-#### Books
-
-Warning: Linux moves fast, those books are outdated.
-
-- Linux device drivers: https://lwn.net/images/pdf/LDD3
-- Linux Kernel Development
-- Linux System Programming
-- Linux in a Nutshell
-- Understanding the Linux Kernel
-- The Linux Programming Interface
+1. Commit:
+    - `git commit --signoff`
+2. Make a patch:
+    - `git format-patch origin..master`
+3. Check your patch:
+    - `./scripts/checkpatch.pl 0001-my-commit.patch`
+4. Send email:
+    - `git send-email 0001-my-commit.patch`
 
 # The project
+
+### Subject
 
 The aim of this project is to develop a system call in the Linux kernel.
 
@@ -529,3 +562,47 @@ Corrections will take place on your computers.
 
 Use the `blih/git` repository `Kernel_SysCall` to turn-in your work before the
 date specified on the intranet.
+
+### Examples
+
+#### uptime
+
+Returns how long the system has been running.
+
+```c
+int uptime(long *mseconds);
+```
+
+#### hidepid
+
+Hides a process from the view of others.
+
+```c
+int hidepid(pid_t pid);
+```
+
+### Bonus
+
+- Logging and debugging
+- KConfig entries
+- Parameters
+- arm (or another architecture) support
+
+# More documentation
+
+### More documentation
+
+#### Web
+
+- http://kernelnewbies.org
+
+#### Books
+
+Warning: Linux moves fast, those books contain outdated information.
+
+- Linux device drivers: https://lwn.net/images/pdf/LDD3
+- Linux Kernel Development
+- Linux System Programming
+- Linux in a Nutshell
+- Understanding the Linux Kernel
+- The Linux Programming Interface

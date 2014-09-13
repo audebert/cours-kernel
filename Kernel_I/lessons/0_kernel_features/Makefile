@@ -1,2 +1,2 @@
 kernel_features.pdf: kernel_features.mkd
-	pandoc --to beamer -o $@ $<
+	pandoc --template lse.template --to beamer -o $@ $<
