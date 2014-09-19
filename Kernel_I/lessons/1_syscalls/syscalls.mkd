@@ -1,0 +1,91 @@
+% Kernel I - More modules and syscalls
+% Rémi Audebert - Pierre Surply
+% 2014-09-13
+
+# System calls
+
+## Generalities
+
+User space can issue requests to kernel land in order to access its resources
+or perfrom restricted operations.
+
+Syscalls usages:
+
+- Manipulating files and I/O (`open`, `read`, `write`, etc.)
+- Getting/Setting system configuration (`gettimeofday`)
+- Manipulating devices (`ioctl`)
+- Cryptographic and security tools (`getrandom`, 
+
+## Technicalities
+
+## x86: int 0x80
+
+#### 32-bit
+
+```asm
+mov eax, 1
+int 0x80
+```
+
+#### 64-bit
+
+```asm
+mov eax, 60
+syscall
+```
+
+Parameters
+
+### vDSO
+
+### Just to check...
+
+Because I'm very skeptical I wanted to make a quick check that no syscall was
+issued when the code used `gettimeofday`, so:
+
+```c
+main() { gettimeofday(&"    ", &"    "); }
+```
+
+```bash
+```
+
+## Implementation
+
+### Adding a syscall
+
+## A guided tour of syscalls
+
+### sysinfo
+
+### File I/O
+
+- `open`
+- `fcntl`
+
+### What is a fd?
+
+### ioctl
+
+Device I/O
+
+Prototype:
+
+```c
+```
+
+### ioctl numbering scheme
+
+### socket
+
+### clone
+
+Ever heard of `fork`?
+
+### `sigaction` and `rt_sigaction`
+
+http://stackoverflow.com/questions/12889116/what-is-the-difference-between-signal-and-rt-signal-syscalls-in-linux
+
+## Going further than syscalls
+
+There are places in the kernel where

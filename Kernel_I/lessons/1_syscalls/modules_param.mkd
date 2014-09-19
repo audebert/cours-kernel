@@ -1,0 +1,47 @@
+% Kernel I - More modules and syscalls
+% Rémi Audebert - Pierre Surply
+% 2014-09-13
+
+# More modules
+
+## Parameters
+
+Parameters are typed `key=value` settings.
+
+### Available types
+
+## Defining a parameters
+
+## Modifiying a parameter
+
+# System calls
+
+## Usage
+
+### int 0x80
+
+### vDSO
+
+### Just to check...
+
+Because I'm very skeptical I wanted to make a quick check that no syscall was
+issued when the code used `gettimeofday`, so:
+
+```c
+main() { gettimeofday(&"    ", &"    "); }
+```
+
+```bash
+```
+
+## Implementation
+
+### Adding a syscall
+
+## A guided tour of syscalls
+
+### read
+
+### sysinfo
+
+### ioctl
