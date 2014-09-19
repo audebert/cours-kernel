@@ -4,6 +4,15 @@
 
 # Introduction
 
+### Contact info
+
+- Rémi Audebert
+    - halfr on irc.rezosup.org
+    - halfr@lse.epita.fr
+- Pierre Surply
+    - Ptishell on irc.rezosup.org
+    - pierre.surply@lse.epita.fr
+
 ### What is a kernel?
 
 The kernel is the part of the system that:
@@ -15,7 +24,7 @@ The kernel is the part of the system that:
 
 # The Linux kernel
 
-#### Main features
+### Main features
 
 - Portable
 - Stable
