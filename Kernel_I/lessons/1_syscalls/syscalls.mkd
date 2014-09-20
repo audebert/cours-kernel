@@ -375,3 +375,12 @@ magic2. (The hexadecimal values of these constants are meaningful.)
 - http://lwn.net/Articles/604287/
 - http://lwn.net/Articles/604515/
 - https://www.kernel.org/doc/htmldocs/kernel-hacking
+
+## Contact info
+
+- Rémi Audebert
+    - halfr on irc.rezosup.org
+    - halfr@lse.epita.fr
+- Pierre Surply
+    - Ptishell on irc.rezosup.org
+    - pierre.surply@lse.epita.fr
