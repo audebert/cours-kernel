@@ -1,0 +1,127 @@
+% Kernel I - News and history - 1
+% Rémi Audebert - Pierre Surply
+% 2014-09-20
+
+# What's new in the kernel?
+
+## Released this week
+
+- `3.17-rc5`
+- `3.16.3`
+
+## On linus's branch: 35 patches
+
+\fontsize{2mm}{0.5em}
+
+```
+$ git log --no-merges --oneline --since=1.week
+153a9f1 Fix unbalanced mutex in dma_pool_create().
+8ba4caf Revert "init: make rootdelay=N consistent with rootwait behaviour"
+dab1b44 MIPS: SmartMIPS: Disable assembler warnings
+6e7488f spi: davinci: remove empty function davinci_spi_cleanup
+a060dc5 vfs: workaround gcc <4.6 build error in link_path_walk()
+364d429 Fix mfsymlinks file size check
+69af38d Update version number displayed by modinfo for cifs.ko
+116ae5e cifs: remove dead code
+a5c3e1c Revert "cifs: No need to send SIGKILL to demux_thread during umount"
+f3b5933 ia64: Fix syscall number for memfd_create
+d6bb3e9 vfs: simplify and shrink stack frame of link_path_walk()
+da80659 [SMB3] Fix oops when creating symlinks on smb3
+9e82bf0 Linux 3.17-rc5
+9226b5b vfs: avoid non-forwarding large load after small store in path lookup
+2ae83bf [CIFS] Fix setting time before epoch (negative time values)
+4023bfc be careful with nd->inode in path_init() and follow_dotdot_rcu()
+7bd8837 don't bugger nd->seq on set_root_rcu() from follow_dotdot_rcu()
+3cc5ba1 ntb: Add alignment check to meet hardware requirement
+9ef6bf6 MAINTAINERS: update NTB info
+a1413cf NTB: correct the spread of queues over mw's
+f5be3e2912 fix bogus read_seqretry() checks introduced in b37199e
+6f18493 move the call of __d_drop(anon) into __d_materialise_unique(dentry, anon)
+f77ced6 [fix] lustre: d_make_root() does iput() on dentry allocation failure
+8920649 parisc: Implement new LWS CAS supporting 64 bit operations.
+99d263d vfs: fix bad hashing of dentries
+23d0db7 Make hash_64() use a 64-bit multiply when appropriate
+72d9310 Make ARCH_HAS_FAST_MULTIPLIER a real config variable
+d67f660 ASoC: rockchip-i2s: dt: swap tx and rx channed request number in example
+2f1e93f ASoC: rockchip-i2s: fix registers' property of rockchip i2s controller
+07833d8 ASoC: rockchip-i2s: fix master mode set bit error
+8936dec spi: davinci: request cs_gpio's from probe
+474e941 alarmtimer: Lock k_itimer during timer callback
+265b81d alarmtimer: Do not signal SIGEV_NONE timers
+e86fea7 alarmtimer: Return relative times in timer_gettime
+d78c930 jiffies: Fix timeval conversion to jiffies
+```
+
+## On linux-next...
+
+\small
+
+```bash
+$ git rev-list --no-merges --since=1.week HEAD --count
+1035
+```
+
+# A bit of history
+
+## What is RHEL?
+
+RHEL means Red Hat Enterprise Linux.
+
+Features:
+
+- Published by Red Hat
+- Fully open source
+- Forked off Fedora
+- Very stable and strong QA effort
+- New release every two years
+- Supported 13 years
+
+Red Hat offers paying customer support.
+
+## Releases
+
+State     Release  Base          Kernel
+--------- -------- ------------- ------------
+Current   RHEL7    Fedora 19     Linux 3.10
+Supported RHEL6    Fedora 12, 13 Linux 2.6.32
+Supported RHEL5    Fedora Core 6 Linux 2.6.18
+Supported RHEL4    Fedora Core 3 Linux 2.6.9
+
+Note: RHEL7 is 64bit only!
+
+## Derivations
+
+Because all sources are open source, you can fork RHEL and build your own.
+
+Examples:
+
+- Centos
+- Scientific Linux
+- **Oracle Linux**
+- ...
+
+## Red Hat makes money
+
+- Red Hat releases a source tarball with all their patches already applied.
+
+. . .
+
+- Red Hat do not provide individual patches.
+
+ . . .
+
+- This is GPL compliant.
+
+ . . .
+
+- Red Hat will provide the patches to their support service customers.
+
+## RedPatch from Oracle
+
+> Broken out commits for RedHat-compatible kernel.
+
+> The aim of the RedPatch project is to take all of the source code changes of
+> the Red Hat Kernel from release to release and to break them up into smaller,
+> stand-alone changes, using upstream commits whenever possible.
+>
+> -- https://oss.oracle.com/projects/RedPatch/
