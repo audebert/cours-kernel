@@ -6,19 +6,20 @@
 
 ## What is a syscall?
 
-User space can issue requests to kernel land in order to access its resources
-or perfrom restricted operations.
+User space can issue requests to the kernel in order to access its resources or
+perfrom restricted operations.
 
-You can think of a syscall as regular function call, but the code being called
-is in the kernel.
+You can think of a syscall as regular function call, but where the code being
+called is in the kernel.
 
 Syscalls usages:
 
 - Manipulating files and VFS: `open`, `read`, `write`, ...
-- System setup: `gettimeofday`,`swapon`, `shutdown`...
+- System setup: `gettimeofday`, `swapon`, `shutdown`...
 - Processes management: `clone`, `mmap`, ...
 - Manipulating devices: `ioctl`, `mount`, ...
-- Cryptographic and security tools: `seccomp`, `getrandom`, ...
+- Cryptography and security: `seccomp`, `getrandom`, ...
+- ...
 
 # Technicalities
 
@@ -62,9 +63,11 @@ long syscall(long number, ...);
 ## vdso(7)
 
 - Virtual Dynamically linked Shared Objects
-- Small shared library that the kernel automatically maps into the address space of all user-space applications.
-- Contains non priviledged code and data: `gettimeofday`, `time`, `clock_gettime`
-- The ELF must be dynamically linked
+- Small shared library (8k) that the kernel automatically maps into the
+  address space of all user-space applications.
+- Contains non priviledged code and data: `gettimeofday`, `time`,
+  `clock_gettime`, ... (arch-depedent)
+- The ELF must be dynamically linked.
 
 Why?
 
@@ -127,18 +130,18 @@ $ strace -e time ./time
 
 ## Defining a syscall
 
-Use the `SYSCALL_DEFINEx(syscall, ...)` macros.
+Use the `SYSCALL_DEFINEx(syscall, ...)` macros anywhere in Linux code.
 
 These macros expands to:
 
 - `SYSCALL_METADATA(syscall, ...)` generate metadata used in `FTRACE` tracing framework
 - `__SYSCALL_DEFINEx(syscall, ...)` more function definition expansion
 - Ultimatly: `asmlinkage long SyS_syscall(..)`
-- `asmlinkage` means that arguments are on the stack
+- `asmlinkage` means that arguments are on the stack.
 
 ## Example
 
-In `kernel/signal.c`
+In `kernel/signal.c`:
 
 \scriptsize
 
@@ -235,7 +238,7 @@ See `arch/x86/syscalls/syscall_{32,64}.tbl`.
 \small
 
 ```c
-2099 SYSCALL_DEFINE1(sysinfo, struct sysinfo __user *info)
+2099 SYSCALL_DEFINE1(sysinfo, struct sysinfo __user *, info)
 2100 {
 2101         struct sysinfo val;
 2102 
@@ -269,15 +272,55 @@ See `arch/x86/syscalls/syscall_{32,64}.tbl`.
 int ioctl(int d, unsigned long request, ...);
 ```
 
-- Control device
-
-### ioctl numbering scheme
-
-- Size
+- Control devices.
+- A big mess.
+- See LDD3, Chapter 6: Advanced Char Driver Operations
 
 ## clone
 
-Have you ever heard of `fork` or `vfork`?
+### clone
+
+\scriptsize
+
+```c
+SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
+                 int __user *, parent_tidptr,
+                 int __user *, child_tidptr,
+                 int, tls_val)
+{
+	return do_fork(clone_flags, newsp, 0, parent_tidptr, child_tidptr);
+}
+```
+
+. . .
+
+### fork
+
+\scriptsize
+
+```c
+SYSCALL_DEFINE0(fork)
+{
+	return do_fork(SIGCHLD, 0, 0, NULL, NULL);
+}
+```
+
+. . .
+
+### vfork
+
+\scriptsize
+
+```c
+SYSCALL_DEFINE0(vfork)
+{
+	return do_fork(CLONE_VFORK | CLONE_VM | SIGCHLD, 0,
+                       0, NULL, NULL);
+}
+```
+
+. . .
+
 
 ## personality
 
@@ -299,7 +342,7 @@ int personality(unsigned long persona);
 
 http://stackoverflow.com/questions/12889116/what-is-the-difference-between-signal-and-rt-signal-syscalls-in-linux
 
-## shutdown
+## reboot
 
 ```c
 #include <unistd.h>
@@ -308,13 +351,17 @@ http://stackoverflow.com/questions/12889116/what-is-the-difference-between-signa
 int reboot(int magic, int magic2, int cmd, void *arg);
 ```
 
-    This system call will fail (with EINVAL) unless magic equals
-    LINUX_REBOOT_MAGIC1 (that is, 0xfee1dead) and magic2 equals
-    LINUX_REBOOT_MAGIC2 (that is, 672274793).  However, since 2.1.17 also
-    LINUX_REBOOT_MAGIC2A (that is, 85072278) and since 2.1.97 also
-    LINUX_REBOOT_MAGIC2B (that is, 369367448) and since 2.5.71 also
-    LINUX_REBOOT_MAGIC2C (that is, 537993216) are permitted as value for
-    magic2. (The hexadecimal values of these constants are meaningful.)
+\scriptsize
+
+```
+This system call will fail (with EINVAL) unless magic equals
+LINUX_REBOOT_MAGIC1 (that is, 0xfee1dead) and magic2 equals
+LINUX_REBOOT_MAGIC2 (that is, 672274793).  However, since 2.1.17 also
+LINUX_REBOOT_MAGIC2A (that is, 85072278) and since 2.1.97 also
+LINUX_REBOOT_MAGIC2B (that is, 369367448) and since 2.5.71 also
+LINUX_REBOOT_MAGIC2C (that is, 537993216) are permitted as value for
+magic2. (The hexadecimal values of these constants are meaningful.)
+```
 
 ## Going further than syscalls
 
