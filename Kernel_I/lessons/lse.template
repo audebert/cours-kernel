@@ -6,7 +6,7 @@
 
 \makeatletter
 \beamer@headheight=1.5\baselineskip
-\logo{\includegraphics[height=1cm]{logo}}
+\logo{\includegraphics[height=1cm]{../logo}}
 \makeatother
 
 $if(fonttheme)$
