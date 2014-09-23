@@ -112,7 +112,7 @@ int main(int ac, char **av) {
 	printf("%d\n", time(0));
 }
 $ gcc time.c -o time -static
-$ strace ./time
+$ strace -e time ./time
 time(NULL)                              = 1411171041
 1411171041
 +++ exited with 11 +++
