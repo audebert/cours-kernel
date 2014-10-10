@@ -1,0 +1,213 @@
+% Kernel I - Devices
+% Rémi Audebert - Pierre Surply
+% 2014-10-11
+
+# Devices
+
+### Types of devices
+
+There are 4 major types of devices:
+
+- Char devices (*cdev*)
+- Block devices (*blkdev*)
+- Network devices (*netdev*)
+- Pseudo or virtual devices
+
+### Major and minor numbers
+
+- In linux, all block and character devices are identified using a *major* and
+  a *minor* number.
+- The *major* number typically indicates the family of the devices:
+    - memory devices, pseudo-tty, floppy disks, ...
+- The *minor* number typically indicates the number of the devices:
+    - the ID of the serial pot
+    - the partition of the disks
+- Most major and minor numbers are statically allocated, but your driver can
+  ask for dynamically allocated ones.
+
+- A list of known major and minor numbers available: `Documentation/devices.txt.
+
+### Creating device nodes
+
+You can create device nodes using
+
+#### `mknod(2)`
+
+```c
+    int mknod(const char *pathname, mode_t mode, dev_t dev);
+```
+
+#### `mknod(1)`
+
+```bash
+$ ls -lh /dev/sda1
+brw-rw---- 1 root disk 8, 1 Oct 10 07:54 /dev/sda1
+$ mknode mysda1 b 8 1
+$ mknode myzero c 1 5
+$ ls -l
+brw-r--r-- 1 root root 8, 1 Oct 10 22:00 mysda1
+crw-r--r-- 1 root root 1, 5 Oct 10 22:00 myzero
+```
+
+### Char devices
+
+- Often abbreviated *cdevs*
+- Generally stream-of-bytes oriented
+- Generally not addressable
+- Very simple to use and create
+- Do not deserve a subsystem
+- Examples:
+    - Serial lines
+    - Keyboards
+    - Mice
+
+### Block devices
+
+- Often abbreviated *blkdevs*
+- Generally supports:
+    - seeking
+    - random access of data
+- Base unit of work is the block
+- Require an I/O scheduler
+- Examples:
+    - Hard-disks
+    - RAM
+
+### IO Scheduler and block devices
+
+- Block devices are meant for speed
+- The kernel must provide the best throughput (global or application specific)
+- The IO scheduler manages read or write requests from userspace.
+- It can:
+    - Merges coalescing requests into one
+    - Sorts requests
+    - Provides both good read and write performance
+- They are called "escalators" because of the movement of the head on a
+  hard-drive.
+- In Linux: `block/\*-iosched.c`:
+    - `cfq-iosched.c`
+    - `deadline-iosched.c`
+    - `noop-iosched.c`
+
+### Network devices
+
+- Provides access to a network via a physical adapter and a specific protocol
+- Use the BSD socket API, not files.
+- Internally, uses file descriptors:
+    - Enable usage of `sendfile(2)` or `splice(2)`
+
+### Pseudo devices
+
+Device nodes do not necessarily have to correspond to physical devices.
+
+They provide various functions handled by the operating system. Some of the
+most commonly used (character-based) pseudo-devices include:
+
+- `/dev/null`: accepts and discards all input; produces no outpuT
+- `/dev/zero`: accepts and discards all input; produces a continuous stream of
+  NUL (zero value) bytes
+- `/dev/full`: produces a continuous stream of NUL (zero value) bytes when
+  read, and returns a "disk full" message when written to
+- `/dev/random`, `/dev/urandom` [^1]
+
+[^1]: http://www.2uo.de/myths-about-urandom
+
+
+### Where are the devices?
+
+- `/dev/`, populated by `devtmpfs`, and later in userspace by `udev`
+- `/sys/`
+
+### MODALIAS
+
+- The kernel bus drivers probe for devices.
+- For every detected device, the kernel creates an internal device structure
+  and the driver core sends a uevent to the udev daemon.
+- Bus devices identify themselves by a specially-formatted ID, which tells what
+  kind of device it is.
+- Usually these IDs consist of vendor and product ID and other
+  subsystem-specific values.
+- Every bus has its own scheme for these IDs, called MODALIAS.
+- The kernel takes the device information, composes a MODALIAS ID string from
+  it, and sends that string along with the event. For a USB mouse, it looks
+  like this:
+
+```
+    MODALIAS=usb:v046DpC03Ed2000dc00dsc00dp00ic03isc01ip02
+```
+
+### MODALIAS
+
+- Every device driver carries a list of known aliases for devices it can handle.
+- The list is contained in the kernel module file itself.
+- The program depmod reads the ID lists and creates the file `modules.alias` in
+  the kernel's `/lib/modules` directory for all currently available modules.
+- With this infrastructure, module loading is as easy as calling `modprobe(8)`
+  for every event that carries a MODALIAS key.
+- If modprobe $MODALIAS is called, it matches the device alias composed for the
+  device with the aliases provided by the modules.
+- If a matching entry is found, that module is loaded. All this is triggered by
+  udev and happens automatically.
+
+More information:
+
+- http://www.mpipks-dresden.mpg.de/~mueller/docs/suse10.1/suselinux-manual_en/manual/sec.udev.boot.html
+- http://people.skolelinux.org/pere/blog/Modalias_strings___a_practical_way_to_map__stuff__to_hardware.html
+- https://wiki.archlinux.org/index.php/Modalias
+
+### What is udev?
+
+- A daemon, running in userspace
+- It listens to events sent by the kernel
+- Provides a set of configurable rules and actions to perform when devices
+  appears or changes.
+- Manages device nodes in the `/dev` directory:
+    - Creates symlinks (`/dev/disks/by-path/`)
+- Chooses names for devices:
+    - Predictable and stable
+- `udevadm monitor`: Listens to the kernel uevents, and envents sent by udev
+  rules
+
+# The Device Model
+
+### Why a device model?
+
+- Maximization of portability amond the platforms and architectures. Example:
+    - The same USB device driver can be usable on a x86 PC or an ARM platform
+- Minimization of code duplication: provide common facilities for refcounting
+- To categorize devices by their class, such as input devices.
+- To have the possibility to enumerate the currently available devices,
+  their dependencies and capabilities
+
+# The project
+
+The aim of this project is to develop a serial driver in a Linux Kernel (or
+NetBSD, then you will have to use the generic methods: Probe, Attach, Detach).
+
+Your driver should be able to transfer data without loss or scrambling, from a
+computer to another via the serial port. You have to initialize the port and
+use both Data/Line Status registers to send and receive data.
+
+Features:
+
+- Out-of-tree module that can be built for the current kernel or for a specific
+  version.
+- Uses the ioctl facilty to configure the serial line.
+- Uses module parameters to select the serial port.
+- Automatic management of a /dev/ node.
+
+You can use virtual machines capacities for the tests.
+
+Corrections will take place on your computers.
+
+Use the blih/git repository Kernel_SerialDriver to turn-in your work before the
+date specified on the intranet.
+
+### Contact info
+
+- Rémi Audebert
+    - halfr on irc.rezosup.org
+    - halfr@lse.epita.fr
+- Pierre Surply
+    - Ptishell on irc.rezosup.org
+    - pierre.surply@lse.epita.fr
