@@ -238,7 +238,8 @@ See `arch/x86/syscalls/syscall_{32,64}.tbl`.
 \small
 
 ```c
-2099 SYSCALL_DEFINE1(sysinfo, struct sysinfo __user *, info)
+2099 SYSCALL_DEFINE1(sysinfo,
+                     struct sysinfo __user *, info)
 2100 {
 2101         struct sysinfo val;
 2102 
@@ -256,7 +257,8 @@ See `arch/x86/syscalls/syscall_{32,64}.tbl`.
 
 ### ``__user``
 
-- Used by tools such as `sparse` to statically check the use of userspace pointers.
+- Used by tools such as `sparse` to statically check the use of userspace
+  pointers.
 - `# define __user __attribute__((noderef, address_space(1)))`
 
 ### ``copy_to_user``
@@ -283,10 +285,11 @@ int ioctl(int d, unsigned long request, ...);
 \scriptsize
 
 ```c
-SYSCALL_DEFINE5(clone, unsigned long, clone_flags, unsigned long, newsp,
-                 int __user *, parent_tidptr,
-                 int __user *, child_tidptr,
-                 int, tls_val)
+SYSCALL_DEFINE5(clone, unsigned long, clone_flags,
+                unsigned long, newsp,
+                int __user *, parent_tidptr,
+                int __user *, child_tidptr,
+                int, tls_val)
 {
 	return do_fork(clone_flags, newsp, 0, parent_tidptr, child_tidptr);
 }
