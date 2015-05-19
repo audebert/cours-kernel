@@ -1,0 +1,389 @@
+% Kernel I - Syscalls
+% Rémi Audebert - Pierre Surply
+% 2014-09-20
+
+# Generalities
+
+## What is a syscall?
+
+User space can issue requests to the kernel in order to access its resources or
+perfrom restricted operations.
+
+You can think of a syscall as regular function call, but where the code being
+called is in the kernel.
+
+Syscalls usages:
+
+- Manipulating files and VFS: `open`, `read`, `write`, ...
+- System setup: `gettimeofday`, `swapon`, `shutdown`...
+- Processes management: `clone`, `mmap`, ...
+- Manipulating devices: `ioctl`, `mount`, ...
+- Cryptography and security: `seccomp`, `getrandom`, ...
+- ...
+
+# Technicalities
+
+## On x86 32-bits
+
+```nasm
+mov eax, 1 ; exit
+int 0x80 ; or sysenter
+```
+
+- Syscall number: `eax`
+- Arguments: `ebx`, `ecx`, `edx`, `esi`, `edi`, `ebp`, then on memory
+
+## On x86 64-bits
+
+
+```nasm
+mov eax, 60 ; exit
+syscall
+```
+
+- Syscall number: `rax`
+- Arguments: `rdi`, `rsi`, `rdx`, `rcx`, `r8` and `r9`, no args on memory
+
+## syscall(2)
+
+```c
+#include <unistd.h>
+#include <sys/syscall.h> /* for __NR_xxx */
+
+long syscall(long number, ...);
+```
+
+## Don't panic!
+
+- You will learn all about that in Kernel II!
+- You almost never use direct calls to `syscall(2)`.
+- Your libc provides wrappers for the syscalls you need.
+- Linux also abstracts all thoses details in kernel code.
+
+## vdso(7)
+
+- Virtual Dynamically linked Shared Objects
+- Small shared library (8k) that the kernel automatically maps into the
+  address space of all user-space applications.
+- Contains non priviledged code and data: `gettimeofday`, `time`,
+  `clock_gettime`, ... (arch-depedent)
+- The ELF must be dynamically linked.
+
+Why?
+
+- Making system calls can be slow.
+- On x86 32bit, `int 0x80` is expensive: goes through the full
+  interrupt-handling paths in the processor's microcode as well as in the
+  kernel.
+- Even if there is a dedicated instr (`syscall`), context switching must be
+  done.
+
+## Context switch
+
+A context is:
+
+- The CPU registers (including the instruction pointer)
+- The state of a process (including threads):
+    - Memory state: stack, page tables, etc.
+    - CPU state: registers, caches, etc.
+    - Misc data: pid, cwd, sockets, etc.
+
+- The context switch cost varies:
+    - Non-scheduling:
+        - User -> Kernel -> User: small
+    - Scheduling:
+        - Thread0 -> Threadx -> Thread0 (same CPU): small
+        - Thread0 -> Threadx -> Thread0 (other CPU): medium
+        - Thread0 -> Threadx -> Thread0 (other socket): big
+
+\small
+
+More info http://youtu.be/KXuZi9aeGTw
+
+- User-level threads... with threads. - Paul Turner - Google
+
+## vdso in action
+
+\small
+
+```bash
+$ cat time.c
+int main(int ac, char **av) {
+	printf("%d\n", time(0));
+}
+$ gcc time.c -o time -static
+$ strace -e time ./time
+time(NULL)                              = 1411171041
+1411171041
++++ exited with 11 +++
+$ gcc time.c -o time
+$ ldd ./time
+        linux-vdso.so.1 (0x00007fffe1735000)
+        libc.so.6 => /usr/lib/libc.so.6 (0x00007fee5e753000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007fee5eb01000)
+$ strace -e time ./time
+1411171118
++++ exited with 11 +++
+```
+
+# Implementation
+
+## Defining a syscall
+
+Use the `SYSCALL_DEFINEx(syscall, ...)` macros anywhere in Linux code.
+
+These macros expands to:
+
+- `SYSCALL_METADATA(syscall, ...)` generate metadata used in `FTRACE` tracing framework
+- `__SYSCALL_DEFINEx(syscall, ...)` more function definition expansion
+- Ultimatly: `asmlinkage long SyS_syscall(..)`
+- `asmlinkage` means that arguments are on the stack.
+
+## Example
+
+In `kernel/signal.c`:
+
+\scriptsize
+
+```c
+3538 SYSCALL_DEFINE0(pause)
+3539 {
+3540         while (!signal_pending(current)) {
+3541                 current->state = TASK_INTERRUPTIBLE;
+3542                 schedule();
+3543         }
+3544         return -ERESTARTNOHAND;
+3545 }
+```
+
+## Side notes
+
+### signal_pending
+
+\small
+
+```c
+static inline int signal_pending(struct task_struct *p)
+{
+        return unlikely(
+            test_tsk_thread_flag(p,TIF_SIGPENDING));
+}
+```
+
+### current
+
+\small
+
+```c
+#include <asm/current.h>
+...
+pr_debug("The process is \"%s\" (pid %i)\n",
+	 current->comm, current->pid);
+```
+
+### schedule
+
+\small
+
+Pick the next process to run.
+
+## The syscalls tables
+
+See `arch/x86/syscalls/syscall_{32,64}.tbl`.
+
+### `syscall_32.tbl`
+
+\tiny
+
+```
+# <number> <abi> <name> <entry point> <compat entry point>
+0       i386    restart_syscall         sys_restart_syscall
+1       i386    exit                    sys_exit
+2       i386    fork                    sys_fork                        stub32_fork
+3       i386    read                    sys_read
+4       i386    write                   sys_write
+5       i386    open                    sys_open                        compat_sys_open
+6       i386    close                   sys_close
+
+```
+
+### `syscall_64.tbl`
+
+\tiny
+
+```
+0       common  read                    sys_read
+1       common  write                   sys_write
+2       common  open                    sys_open
+3       common  close                   sys_close
+4       common  stat                    sys_newstat
+5       common  fstat                   sys_newfstat
+...
+16      64      ioctl                   sys_ioctl
+...
+514     x32     ioctl                   compat_sys_ioctl
+```
+
+## Genetation
+
+- Kbuild calls the `syscalltbl.sh` scripts to generates `arch/x86/include/generated/asm/syscalls_{64,32}.h`
+- Same with `syscallhdr.sh`
+
+# A guided tour of some syscalls
+
+## sysinfo
+
+`kernel/sys.c`
+
+\small
+
+```c
+2099 SYSCALL_DEFINE1(sysinfo,
+                     struct sysinfo __user *, info)
+2100 {
+2101         struct sysinfo val;
+2102 
+2103         do_sysinfo(&val);
+2104 
+2105         if (copy_to_user(info, &val,
+                              sizeof(struct sysinfo)))
+2106                 return -EFAULT;
+2107 
+2108         return 0;
+2109 }
+```
+
+## User data
+
+### ``__user``
+
+- Used by tools such as `sparse` to statically check the use of userspace
+  pointers.
+- `# define __user __attribute__((noderef, address_space(1)))`
+
+### ``copy_to_user``
+
+- Copy data from kernel land to user land.
+- Checks that all bytes are writeable, using:
+    - `access_ok(VERIFIY_WRITE, addr_to, length)`
+
+## ioctl
+
+```c
+#include <sys/ioctl.h>
+int ioctl(int d, unsigned long request, ...);
+```
+
+- Control devices.
+- A big mess.
+- See LDD3, Chapter 6: Advanced Char Driver Operations
+
+## clone
+
+### clone
+
+\scriptsize
+
+```c
+SYSCALL_DEFINE5(clone, unsigned long, clone_flags,
+                unsigned long, newsp,
+                int __user *, parent_tidptr,
+                int __user *, child_tidptr,
+                int, tls_val)
+{
+	return do_fork(clone_flags, newsp, 0, parent_tidptr, child_tidptr);
+}
+```
+
+. . .
+
+### fork
+
+\scriptsize
+
+```c
+SYSCALL_DEFINE0(fork)
+{
+	return do_fork(SIGCHLD, 0, 0, NULL, NULL);
+}
+```
+
+. . .
+
+### vfork
+
+\scriptsize
+
+```c
+SYSCALL_DEFINE0(vfork)
+{
+	return do_fork(CLONE_VFORK | CLONE_VM | SIGCHLD, 0,
+                       0, NULL, NULL);
+}
+```
+
+. . .
+
+
+## personality
+
+```c
+#include <sys/personality.h>
+
+int personality(unsigned long persona);
+```
+
+- Sets the process execution domain
+- Used by `setarch`
+- Tweak:
+    - uname-2.6
+    - exposed architecture (`i386`, `i486`, `i586`, etc.)
+    - STICKY_TIMEOUT
+    - ...
+
+## `sigaction` and `rt_sigaction`
+
+http://stackoverflow.com/questions/12889116/what-is-the-difference-between-signal-and-rt-signal-syscalls-in-linux
+
+## reboot
+
+```c
+#include <unistd.h>
+#include <linux/reboot.h>
+
+int reboot(int magic, int magic2, int cmd, void *arg);
+```
+
+\scriptsize
+
+```
+This system call will fail (with EINVAL) unless magic equals
+LINUX_REBOOT_MAGIC1 (that is, 0xfee1dead) and magic2 equals
+LINUX_REBOOT_MAGIC2 (that is, 672274793).  However, since 2.1.17 also
+LINUX_REBOOT_MAGIC2A (that is, 85072278) and since 2.1.97 also
+LINUX_REBOOT_MAGIC2B (that is, 369367448) and since 2.5.71 also
+LINUX_REBOOT_MAGIC2C (that is, 537993216) are permitted as value for
+magic2. (The hexadecimal values of these constants are meaningful.)
+```
+
+## Going further than syscalls
+
+- There are places in the kernel where the complexity of the task goes bewond a
+  call to a function.
+- `ioctl` has grew dangerously
+- For example, `netlink(7)` aims to replace `ioctl` for network configuration.
+
+## References
+
+- http://lwn.net/Articles/604287/
+- http://lwn.net/Articles/604515/
+- https://www.kernel.org/doc/htmldocs/kernel-hacking
+
+## Contact info
+
+- Rémi Audebert
+    - halfr on irc.rezosup.org
+    - halfr@lse.epita.fr
+- Pierre Surply
+    - Ptishell on irc.rezosup.org
+    - pierre.surply@lse.epita.fr

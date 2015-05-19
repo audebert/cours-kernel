@@ -1,0 +1,147 @@
+# What is a kernel
+
+# Main features
+
+# Who is behind linux?
+
+Source: linux annual development report from the linux foundation.
+
+The rate of change in the kernel is high and increasing, with over 10,000
+patches going into each recent kernel release. These releases each contain the
+work of over 1100 developers representing over 225 corporations.
+
+Since 2005, nearly 10,000 individual developers from over 1000 different
+companies have contributed to the kernel. The Linux kernel, thus, has become a
+common resource developed on a massive scale by companies which are fierce
+competitors in other areas.
+
+80% des développeurs payés : ce nombre est en constante augmentation, le rapport
+de la linux foundation explique tout simplement qu'une fois qu'un bénévole a
+prouvé ses compétences sur le développement du noyau Linux, il ne tarde pas à
+recevoir des offres d'emplois par les grandes entreprises qui développent linux.
+
+# Why know Linux?
+
+Finding Linux talent is becoming more of a priority for hiring managers.
+
+    Seventy seven percent of hiring managers have “hiring Linux talent” on their
+    list of priorities for 2014, up from 70 percent a year ago.  With these
+    strategic priorities set, more than nine in ten hiring managers plan to hire
+    a Linux professional in the next six months.
+
+Hiring managers are increasing the number of Linux professionals they are
+searching for.
+
+    Forty six percent of hiring managers are beeing up their plans for
+    recruiting Linux talent over the next six months, a three-point increase
+    over last year.
+
+Knowing Linux advances careers.
+
+    Eighty-six percent of Linux professionals report that knowing Linux has given
+    them more career opportunities, and 64 percent say they chose to work with
+    Linux because of its pervasiveness in modern-day technology infrastructure.
+
+# Current status
+
+mainline:   3.17-rc4    2014-09-07
+stable:     3.16.2  2014-09-05
+
+# Usage and hardware support
+
+Combien de périphériques le noyau Linux supporte-t-il ? C'est plutôt difficile à
+dire étant donné qu'il peut ne y avoir de lien direct entre un driver dans linux
+et un périphérique. Certains drivers sont génériques et peuvent supporter
+plusieurs périphériques différents.
+
+Concernant les architectures, il y a 29 sous-dossiers dans le dossier arch/,
+mais ça ne veut pas dire grand chose, étant donné toutes les variantes et
+micro-architectures qui peuvent existent pour chaque plateform.
+
+arm:
+    - 62 micro-architectures
+    - 121 boards de defconfig
+
+# Android
+
+Ignored the community.
+
+En 2009 tout le code android a été enlevé du noyau principal. Il faut attendre
+2012 et linux 3.3 pour retrouver du code android dans linux.
+
+Numerous additions from the stock Linux, including new IPC (Inter-Process
+Communication) mechanisms, alternative power management mechanism, new drivers
+and various additions across the kernel.
+
+These changes are beginning to go into the staging/ area of the kernel, as of
+3.3, after being a complete fork for a long time.
+
+https://raw.githubusercontent.com/gregkh/android-presentation
+http://free-electrons.com/doc/training/android/android-slides.pdf
+
+# Make defconfig
+
+I wouldn't run either one on an actual machine.  Defconfigs are *example*
+configs, only useful as a template for customizing for actual hardware.
+
+A defconfig is pretty much just a proof of concept starting point for
+an actual working config for a given hardware system.
+
+It is probably easiest to take the .config file of the latest kernel of
+the distribution you are using as a starting point. In that case you
+know that this starting point at least works on your machine.
+
+Missing features of x86_64_defconfig: FUSE, BTRFS
+Useless features: ROOT_NFS
+
+# Config
+
+For better or worse, as a kernel hacker, you need to compile your own kernels
+and learn what modules to include on your own.
+
+Configuration options can also be strings or integers.These options do not
+control the build process but instead specify values that kernel source can
+access as a preprocessor macro. For example, a configuration option can specify
+the size of a statically allocated array.
+
+# Coding style
+
+Like any self-respecting Unix kernel, the Linux kernel is programmed in C.
+Perhaps sur- prisingly, the kernel is not programmed in strict ANSI C. Instead,
+where applicable, the kernel developers make use of various language extensions
+available in gcc (the GNU Compiler Collection, which contains the C compiler
+used to compile the kernel and most everything else written in C on a Linux
+system).  The kernel developers use both ISO C991 and GNU C extensions to the C
+language.  These changes wed the Linux kernel to gcc, although recently one
+other compiler, the Intel C compiler, has sufficiently supported enough gcc
+features that it, too, can compile
+
+
+# Git 
+
+Linus Avril 2005, deux mois après la création par Torvarld, Junio Hamano prends
+le relais et c'est lui qui va faire évoluer git.
+
+# Kernel parameters
+
+If it doesn't recognize a parameter and it doesn't contain a '.', the
+parameter gets passed to init: parameters with '=' go into init's
+environment, others are passed as command line arguments to init.
+
+Everything after "--" is passed as an argument to init.
+
+# Modinfo
+
+Gets information about a module: parameters, license,
+description and dependencies.
+Very useful before deciding to load a module or not.
+
+# VFS
+
+devtmpfs is a file system with automated device nodes populated by the kernel.
+This means you don't have to have udev running nor to create a static /dev
+layout with additional, unneeded and not present device nodes. Instead the
+kernel populates the appropriate information based on the known devices.
+
+On the other hand the standard /dev handling requires either udev, an
+additional daemon running or to statically create device nodes on /dev.
