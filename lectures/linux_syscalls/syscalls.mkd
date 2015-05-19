@@ -21,7 +21,7 @@ Syscalls usages:
 - Cryptography and security: `seccomp`, `getrandom`, ...
 - ...
 
-# Technicalities
+# The syscall userland interfaces
 
 ## On x86 32-bits
 
@@ -31,13 +31,13 @@ int 0x80 ; or sysenter
 ```
 
 - Syscall number: `eax`
-- Arguments: `ebx`, `ecx`, `edx`, `esi`, `edi`, `ebp`, then on memory
+- Arguments: `ebx`, `ecx`, `edx`, `esi`, `edi`, `ebp`, then use the stack
 
 ## On x86 64-bits
 
 
 ```nasm
-mov eax, 60 ; exit
+mov rax, 60 ; exit
 syscall
 ```
 

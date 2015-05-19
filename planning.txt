@@ -1,0 +1,106 @@
+Séminaire 0
+===========
+
+J0
+--
+
+Matin, 3h30 de cours :
+
+* 30mn - Introduction au module
+* 1h - Introduction x86
+* 1h - Introduction Linux
+* 1h - Bootstrap x86
+
+Après-midi, 3h de TP :
+
+* Qemu
+* GDB kernel
+* Buildroot
+* Rootnfs
+* Script LD
+* Build system
+* Framebuffer
+
+J1
+--
+
+Matin, 3h de cours :
+
+* 1h30 - Linux, modules puis syscalls
+* 1h30 - IO ports et serial
+
+Après-midi, 3h de TP :
+
+* Module Linux
+* Syscall Linux
+* Serial
+
+J2
+--
+
+Pas de soutenance donc TP toute la matinée et aide sur les projets.
+
+Séminaire 1
+===========
+
+J0
+--
+
+Matin, 2h de cours :
+
+* 1h - Device model Linux
+* 1h - Segmentation
+
+Après-midi, 3h de TP :
+
+* Char device, /proc, /sys
+* Segmentation
+
+J1
+--
+
+Matin, 2h de cours :
+
+* 1h - Filesystem Linux
+* 1h30 - IDT et interruptions
+
+Après-midi, 3h de TP :
+
+* Écriture d'un driver FS pour Linux
+* Interruptions
+
+J2
+--
+
+Soutenances du séminaire 0.
+
+Séminaire 2
+===========
+
+J0
+--
+
+Matin, 2h de cours :
+
+* 1h30 - Virtual memory x86
+* 1h - Virtual memory Linux
+
+Après-midi, 3h de TP :
+
+* Virtual memory
+
+J1
+--
+
+Matin, 2h de cours :
+
+* 1h - Userland et tasks
+* 1h - Threads kernel et scheduling
+
+
+Après-midi, 3h de TP.
+
+J2
+--
+
+Soutenances du séminaire 1.

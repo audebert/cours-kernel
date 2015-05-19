@@ -66,7 +66,7 @@ The kernel is the part of the system that:
 
 Linux supports more computer architecture than any other OS.
 
-\ ![TOP500 OS from wikimedia](Operating_systems_used_on_top_500_supercomputers.png)
+![TOP500 OS from wikimedia](Operating_systems_used_on_top_500_supercomputers.png)
 
 ### Android
 
@@ -86,7 +86,7 @@ Linux supports more computer architecture than any other OS.
 
 ### Overview
 
-\ ![Linux kernel map](Linux_kernel_map.png)
+![Linux kernel map](Linux_kernel_map.png)
 
 ### The source
 
@@ -94,43 +94,43 @@ Linux supports more computer architecture than any other OS.
 
 - `git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git` (1.5G)
 
-### The kernel source tree
+### The kernel source tree (1/3)
 
-- `arch` Architecture-specific code
-- `block` Block I/O layer
-- `crypto` Cryptographic API
-- `Documentation` Kernel source documentation
-- `drivers` Device drivers (except sound ones)
-- `firmware` Device firmware needed for some devices
-- `fs` Filesystems infrastructure
-- `include` Kernel headers
-    - `include/linux` Core kernel headers
-    - `include/uapi` User space API headers
-- `init` Kernel initialization
-- `ipc` System V InterProcess Communication (sem, shm, msgqueue)
+- `arch/` Architecture-specific code
+- `block/` Block I/O layer
+- `crypto/` Cryptographic API
+- `Documentation/` Kernel source documentation
+- `drivers/` Device drivers (except sound ones)
+- `firmware/` Device firmware needed for some devices
+- `fs/` Filesystems infrastructure
+- `include/` Kernel headers
+    - `include/linux/` Core kernel headers
+    - `include/uapi/` User space API headers
+- `init/` Kernel initialization
+- `ipc/` System V InterProcess Communication (sem, shm, msgqueue)
 
-### The kernel source tree
+### The kernel source tree (2/3)
 
-- `kernel` Linux kernel core
-- `lib` Routine library (lists, trees, string, etc.)
-- `mm` Memory management
-- `net` Network support code (not drivers!)
-- `samples` Sample code (trace, kobject, krpobes)
-- `scripts` Scripts for internal or external use
-- `security` Security frameworks
-- `sound` Sound code and drivers
-- `tools` User space tools
-- `usr` Generate the initramfs
-- `virt` Virtualization infrastructure (kvm)
+- `kernel/` Linux kernel core
+- `lib/` Routine library (lists, trees, string, etc.)
+- `mm/` Memory management
+- `net/` Network support code (not drivers!)
+- `samples/` Sample code (trace, kobject, krpobes)
+- `scripts/` Scripts for internal or external use
+- `security/` Security frameworks
+- `sound/` Sound code and drivers
+- `tools/` User space tools
+- `usr/` Generate the initramfs
+- `virt/` Virtualization infrastructure (kvm)
 
-### The kernel source tree
+### The kernel source tree (3/3)
 
 - `COPYING` The kernel licence (GPLv2)
 - `CREDITS` The people who have contributed to the kernel
 - `Kbuild` Kernel build system
 - `Kconfig` Description of configuration parameters
 - `MAINTAINERS` Maintainer of subsystems and drivers
-- `Makefile` Base kernel Makefile (ARCH and VERSION)
+- `Makefile` Base kernel Makefile
 - `README` Overview of the kernel
 - `REPORTING-BUGS` Instructions for reporting bugs
 
@@ -143,9 +143,9 @@ Linux supports more computer architecture than any other OS.
   runtime to extend its features. Each module is a single file.
 
 - Configuring the kernel is:
-    - choosing what's going into the main file, and what will be built as
+    - Choosing what's going into the main file, and what will be built as
       modules.
-    - setting various options
+    - Setting various options.
 
 ### Kernel options
 
@@ -155,10 +155,7 @@ Linux supports more computer architecture than any other OS.
     - `CONFIG_INITRAMFS_SOURCE` string
     - `CONFIG_MAGIC_SYSRQ_DEFAULT_ENABLE` hex
     - `CONFIG_BTRFS_FS` tristate (true/module/false)
-
-### Kernel options dependencies
-
-- Options can depends on others.
+- Options can depend on others.
 - Two types of dependencies:
     - A `select` B, enabling A enables B
     - A `depends on` B, A is not visible until B is enabled
@@ -254,9 +251,10 @@ Produces:
 
 ### The command line: kernel parameters
 
-- It is a string from runtime configuration:
+- It is a string for runtime configuration:
     - no recompilation
     - can be builtin, using the `CONFIG_CMDLINE` option
+    - can be used to pass arguments to the `init` program
 - Many kernel options, examples:
     - `root=/dev/sda1` the root filesystem
     - `console=ttyS0` where to write kernel messages
@@ -264,7 +262,7 @@ Produces:
     - `usbcore.blinkenlights=true` also available for modules
 - More documentation: `Documentation/kernel-parameters.txt`
 
-### System calls (syscalls)
+### Syscalls
 
 - The system call is the fundamental interface between an application and the
   Linux kernel.
@@ -273,28 +271,30 @@ Produces:
 - More than 320 on x86, some are architecture-specific, but most are common.
 - One of the key component of Linux' maturity.
 
-More details in the next lessons!
+More details in the next lesson!
 
 ### The kernel log
 
 - The kernel stores msgs in a circular log buffer:
     - `/proc/ksmg` for raw output
     - `/dev/kmsg` for structured message reading
+- By default the kernel log is outputted on the console, see the `console=`
+  kernel parameter.
 - The `dmsg` tool (diagnostic message) can be used to read those messages
 
 ### Loadable kernel modules (LKM)
 
 #### Loading
 
-- Require `CONFIG_MODULES`
-- `insmod`: plug a `.ko` file into the kernel
-- `modprobe`: loads modules and their dependencies
-- Both can handle module parameters:
-    - `sudo insmod ./snd-intel8x0m.ko index=-2`
+- Require `CONFIG_MODULES=y`
+- `insmod`: plugs a `.ko` file into the kernel.
+- `modprobe`: loads modules and their dependencies.
+- Both handle module parameters:
+    - `$ insmod ./snd-intel8x0m.ko index=-2`
 
 #### Unloading
 
-- Require `CONFIG_MODULE_UNLOAD`
+- Require `CONFIG_MODULE_UNLOAD=y`
 - `rmmod`: unplug the module
 - `modprobe -r`: preferred
 
@@ -303,14 +303,16 @@ More details in the next lessons!
 - `lsmod`: Show the status of modules in the Linux Kernel
 - `modinfo`: Show information about a Linux Kernel module
 
-### VFS
+### Pseudo file systems
+
+There are many pseudo file systems in Linux, here are some of them:
 
 - `proc`: (`/proc`) processes info, raw stuff, etc.
 - `sysfs`: (`/sys`) structured information about various kernel subsystems,
   tied to `kobjects`
 - `devtmpfs`: (`/dev`) kernel populated devices nodes
 
-More details in the next lessons!
+More details in the next lesson!
 
 # Writing code for Linux
 
@@ -329,7 +331,7 @@ More details in the next lessons!
 ### Cscope
 
 - http://cscope.sourceforge.net/
-- Built in VIM and Emacs
+- Built in VIM and Emacs!
 - Search:
     - Symbol definition
     - Symbol usage
@@ -337,7 +339,7 @@ More details in the next lessons!
     - Text
     - ...
 - You must generate the database.
-    - Use `make cscope` to get the database of your architecture
+    - Use `make cscope` to get the database of your architecture.
 
 ### LXR (http://lxr.free-electrons.com)
 
@@ -353,14 +355,14 @@ More details in the next lessons!
 
 ### Coding style
 
-- Indentation uses tabs
-- Tabs are 8 spaces
-- No more than 80 chars per line (more a guideline than a hard rule)
-
 > First off, I'd suggest printing out a copy of the GNU coding standards, and
 > NOT read it.  Burn them, it's a great symbolic gesture.
 >
 > -- Documentation/CodingStyle
+
+- Indentation uses tabs
+- Tabs are 8 spaces
+- No more than 80 chars per line (more a guideline than a hard rule)
 
 ### Coding style
 
@@ -502,15 +504,20 @@ void mod_exit(void);
 - Also useful: `MODULE_VERSION`, `MODULE_INFO`, `MODULE_SOFTDEP`
 - More information: `include/linux/module.h`
 
-### Explanations
+### `printk`
 
-- `printk` is the kernel space `printf`.
+- `printk` is the kernel space version of `printf`.
 - Select the logging level:
     - `pr_emerg, pr_alert, pr_crit, pr_err, pr_warn, pr_notice, pr_info, pr_debug`
+- Modern code uses `pr_xxx`.
 - `pr_devel` while you develop your code
 - `pr_cont` allow multiline messages
+- Formats are described in `Documentation/printk-formats.txt`.
 
-#### `pr_fmt`
+### `pr_fmt`
+
+You define the `pr_fmt` macro to set the default format to all your `pr_xxx`
+calls.
 
 ```c
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
@@ -546,6 +553,21 @@ obj-m := hello.o
 endif
 ```
 
+### Dynamic debug
+
+- Enabled if your kernel have `CONFIG_DYNAMIC_DEBUG=y`.
+- Registers a control file: `/sys/kernel/debug/dynamic_debug/control`.
+- Display the current configuration by reading this file.
+- Enable debug calls using:
+
+```bash
+# debug for the module `mymodule`
+$ cd /sys/kernel/debug/dynamic_debug
+$ echo 'module mymodule +p' > control
+```
+
+- Documentation in `Documentation/dynamic-debug-howto.txt`
+
 ### Submitting patches
 
 1. Commit:
@@ -560,6 +582,10 @@ endif
 # More documentation
 
 ### More documentation
+
+#### IRC
+
+- `irc.oftc.net #kernelnewbies`
 
 #### Web
 

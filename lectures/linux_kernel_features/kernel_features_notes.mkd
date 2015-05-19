@@ -44,6 +44,10 @@ Knowing Linux advances careers.
 
 # Current status
 
+- Toujours en GPL v2 parce que Linus Torvalds et les autres n'ont pas aimé le
+  coté politique de la V3, pour eux la V2 est celle qui se prête le plus à un
+  projet comme linux.
+
 # Usage and hardware support
 
 Combien de périphériques le noyau Linux supporte-t-il ? C'est plutôt difficile à
