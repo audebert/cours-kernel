@@ -1,6 +1,6 @@
 % Kernel I - Syscalls
 % Rémi Audebert - Pierre Surply
-% 2014-09-20
+% 2015-05-22
 
 # Generalities
 
@@ -55,7 +55,7 @@ long syscall(long number, ...);
 
 ## Don't panic!
 
-- You will learn all about that in Kernel II!
+- You will learn all about that in kernel from scratch!
 - You almost never use direct calls to `syscall(2)`.
 - Your libc provides wrappers for the syscalls you need.
 - Linux also abstracts all thoses details in kernel code.

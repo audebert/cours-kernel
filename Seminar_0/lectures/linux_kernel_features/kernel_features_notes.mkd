@@ -44,9 +44,6 @@ Knowing Linux advances careers.
 
 # Current status
 
-mainline:   3.17-rc4    2014-09-07
-stable:     3.16.2  2014-09-05
-
 # Usage and hardware support
 
 Combien de périphériques le noyau Linux supporte-t-il ? C'est plutôt difficile à
@@ -75,6 +72,11 @@ and various additions across the kernel.
 
 These changes are beginning to go into the staging/ area of the kernel, as of
 3.3, after being a complete fork for a long time.
+
+-- Sundar Pichai
+
+Senior Vice President at Google, where he oversees Android, Chrome, and Google
+Apps.
 
 https://raw.githubusercontent.com/gregkh/android-presentation
 http://free-electrons.com/doc/training/android/android-slides.pdf
@@ -115,7 +117,6 @@ system).  The kernel developers use both ISO C991 and GNU C extensions to the C
 language.  These changes wed the Linux kernel to gcc, although recently one
 other compiler, the Intel C compiler, has sufficiently supported enough gcc
 features that it, too, can compile
-
 
 # Git 
 
