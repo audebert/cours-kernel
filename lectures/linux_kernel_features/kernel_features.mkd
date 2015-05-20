@@ -444,13 +444,13 @@ Two alternatives:
 #include <linux/module.h>
 #include <linux/printk.h>
 
-static init __init hello_init(void)
+static __init int hello_init(void)
 {
 	pr_info("Hello, world!\n");
 	return 0;
 }
 
-static void __exit hello_exit(void)
+static __exit void hello_exit(void)
 {
 	pr_info("Goodbye.\n");
 }
