@@ -8,7 +8,16 @@
 
 ```bash
 $ file hello.ko
-hello.ko: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), not stripped
+hello.ko: ELF 64-bit LSB relocatable, x86-64,
+    version 1 (SYSV), not stripped
+$ modinfo ./hello.ko
+filename: /home/halfr/hello/./hello.ko
+author:         Rémi Audebert
+description:    Hello module
+license:        GPL
+depends:        
+vermagic:       4.0.3-1-ARCH SMP preempt mod_unload
+                modversions
 ```
 
 ### Build system
@@ -52,12 +61,29 @@ $ make -C ~/linux M=`pwd` modules
 
 - Using a variable from Kconfig:
 
+#### `Kconfig`
+
+```
+config HELLO
+    tristate "Build with the hello support?"
+```
+
 #### `Makefile`
 
 ```Makefile
 obj-$(CONFIG_HELLO) := hello.o
 hello-objs := hello-file1.o hello-file2.o
 ```
+
+### Generated files
+
+- `hello.o`: The compiled module.
+- `hello.mod.{c,o}`: Additional sections and metadata to be linked in the module
+- `hello.ko`: The linked module.
+- `Module.symvers`: Symbol versions
+- `modules.order`: Lists modules that appears in the `Makefile`, used in case
+  of duplicate module match by `modprobe`.
+- `.tmp_versions` and `.*.cmd`: Miscelaneous files.
 
 ### Cryptographic signing of modules
 
@@ -73,18 +99,61 @@ hello-objs := hello-file1.o hello-file2.o
 
 ### Inserting a module
 
-- Userspace tools such as `insmod` or `modprobe`.
-- Use the `init_module()` syscall, which performs:
+- Userspace tools: `insmod` and `modprobe`.
 
-    - Performs signature checks (if enabled)
-    - Allocates kernel memmory
-    - Copies the module .text section
-    - Resolve the symbols using the kernel symbol table
+    - `modprobe` will try to insert other modules so that all symbol are
+      resolvable.
+
+- They use the `init_module(2)` syscall, which performs (roughly):
+
+    - signature checks (if enabled)
+    - mernel memory allocation
+    - module .text section copy
+    - license and version checks
+    - symbol resolving using the kernel symbol table
+    - `sysfs` and internal registrations
+
+### Unloading a module
+
+- Userspace tools: `rmmod` and `modprobe -r`
+- Uses `delete_module(2)`.
+- Won't work if the kernel thinks the module is still in use:
+
+    - The module is a dependency of another module.
+    - A file descriptor is owned by this module.
+    - ...
 
 ### Versions
 
 - A module has to be recompiled for each version fo the kernel that you want to
   link it to.
+- If `CONFIG_MODVERSIONS=y`, a simple ABI consistency check is performed over
+  the prototypes of exported symbols.
+
+    - When building a module, a CRC is computed for each exported symbol, and
+      stored in `Module.symvers` and in the generated `module.mod.c`.
+- Versions checks can be bypassed, but it is not wise to do so.
+
+### `modalias`
+
+- What peripherals does a module handle? `modalias`!
+
+```bash
+cat /sys/devices/pci0000:00/0000:00:1d.0/usb4/[...]
+usb:v05E3p0608d8537dc09dsc00dp01ic09isc00ip00in00
+```
+
+- `usb` is the device class, the rest is class-specific (*vendor id*, *device
+  id*, etc.)
+- A module defines a `MODULE_ALIAS("usb:...")` that pattern-matches the
+  modalias class-specific string.
+- When a new device is detected, the module loader is called with the
+  `modalias` string and loads the matching module.
+
+- See devices supported by `modalias`: `less /lib/modules/$(uname -r)/modules.alias`
+- Example:
+
+    alias pci:v00001002d000099A4sv*sd*bc*sc*i* radeon
 
 ### Parameters
 
@@ -96,13 +165,3 @@ Parameters are typed `key=value` settings.
 
 ### Modifiying a parameter
 
-# Misc devices
-
-### Description
-
-- `misc` is a type of char devices.
-- Used for *small* drivers.
-- Have a name
-- Appear at `/dev/NAME`.
-
-### Registering a misc device

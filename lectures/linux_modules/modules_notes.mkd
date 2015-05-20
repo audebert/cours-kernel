@@ -18,3 +18,9 @@ https://www.kernel.org/doc/Documentation/module-signing.txt
 - Mais ce n'est vraiment utile que si le kernel aussi est signé, cf.
   trusted-boot.
 
+
+# modalias
+
+http://unix.stackexchange.com/questions/26132/how-to-assign-usb-driver-to-device
+
+
