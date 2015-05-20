@@ -15,7 +15,7 @@ General remarks:
 
 ```
 To: halfr@lse.epita.fr, surply@lse.epita.fr
-Subject: [KERNEL] LOGIN_X LOGIN_Y - PROJECT
+Subject: [KERNEL] LOGIN_X LOGIN_Y - PROJECT NAME
 ```
 
 Project 1 - syscall
@@ -26,7 +26,7 @@ The aim of this project is to add a new syscall to the Linux kernel.
 You must:
 
 - Clone the latest stable Linux release.
-- Edit the source and add the `uptime()` syscall.
+- Edit the sources and add the `uptime()` syscall.
 - Configure, compile, and run your kernel.
 - Create a patch of your modifications.
 - Send us a patch of your modifications by email.
@@ -40,7 +40,7 @@ Here is the specification of the `uptime()` syscall:
            time_t uptime(time_t *t);
 
     DESCRIPTION
-           uptime() returns the uptime of the machine as the number of seconds.
+           uptime() returns the uptime of the machine as a number of seconds.
 
            If t is non-NULL, the return value is also stored in the memory pointed
            to by t.
@@ -77,7 +77,7 @@ You must:
 
 - Create and out-of-tree module.
 - Create a test program.
-- Send us a tarball of the source of your module, with content as such:
+- Send us a tarball of the sources of your module, with content as such:
 
 ```
 version-login_x
