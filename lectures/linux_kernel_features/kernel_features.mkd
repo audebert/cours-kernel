@@ -1,17 +1,8 @@
-% Linux - Kernel features
+% Linux - Introduction
 % Rémi Audebert - Pierre Surply
 % 2015-05-21
 
 # Introduction
-
-### Contact info
-
-- Rémi Audebert
-    - halfr on irc.rezosup.org
-    - halfr@lse.epita.fr
-- Pierre Surply
-    - Ptishell on irc.rezosup.org
-    - pierre.surply@lse.epita.fr
 
 ### What is a kernel?
 
@@ -27,6 +18,7 @@ The kernel is the part of the system that:
 ### Main features
 
 - Portable
+- Versatile
 - Stable
 - Mature
 - Secure
@@ -70,11 +62,9 @@ Linux supports more computer architecture than any other OS.
 
 ### Android
 
-- Long time fork of Linux:
+- Long time fork of Linux
 - Some sources in `drivers/staging/android`
 - Binder was moved late 2014: `drivers/android/binder.c`
-- Linaro leading the upstreaming effort:
-    - https://blueprints.launchpad.net/linux-linaro?searchtext=upstream
 
 #### Usage stats
 
@@ -201,16 +191,16 @@ Simple text files, `key=value` format.
 - `make config`: text based
 - `make menuconfig`, `make nconfig`: menu/ncurses interface
 - `make xconfig`, `make gconfig`: graphical interface
-- `make oldconfig`: upgrade .config with options from the new release
+- `make oldconfig`: upgrade `.config` with options from the new release
 
 ### Vendor kernels
 
 Linux distributions typically enable a lot of kernel features and drivers, most
-of them compiled as modules.
+of them are compiled as modules.
 
 #### Read the config file of your kernel
 
-Require `CONFIG_IKCONFIG_PROC`:
+Require `CONFIG_IKCONFIG_PROC=y`:
 
 ```bash
 $ zcat /proc/config.gz
@@ -280,28 +270,29 @@ More details in the next lesson!
     - `/dev/kmsg` for structured message reading
 - By default the kernel log is outputted on the console, see the `console=`
   kernel parameter.
-- The `dmsg` tool (diagnostic message) can be used to read those messages
+- The `dmesg` tool (diagnostic message) can be used to read those messages.
+- When using `systemd`, `journalctl -k` displays the kernel log.
 
 ### Loadable kernel modules (LKM)
 
 #### Loading
 
 - Require `CONFIG_MODULES=y`
-- `insmod`: plugs a `.ko` file into the kernel.
-- `modprobe`: loads modules and their dependencies.
+- `insmod`: Plug a `.ko` file into the kernel.
+- `modprobe`: Load a module (no `.ko`) and its dependencies.
 - Both handle module parameters:
     - `$ insmod ./snd-intel8x0m.ko index=-2`
 
 #### Unloading
 
 - Require `CONFIG_MODULE_UNLOAD=y`
-- `rmmod`: unplug the module
-- `modprobe -r`: preferred
+- `rmmod`: Unplug the module.
+- `modprobe -r`: Also remove unused dependencies.
 
 #### Info
 
-- `lsmod`: Show the status of modules in the Linux Kernel
-- `modinfo`: Show information about a Linux Kernel module
+- `lsmod`: Show the status of modules in the Linux Kernel.
+- `modinfo`: Show information about a Linux Kernel module.
 
 ### Pseudo file systems
 
@@ -360,9 +351,9 @@ More details in the next lesson!
 >
 > -- Documentation/CodingStyle
 
-- Indentation uses tabs
-- Tabs are 8 spaces
-- No more than 80 chars per line (more a guideline than a hard rule)
+- Indentation uses tabs.
+- Tabs are 8 spaces.
+- No more than 80 chars per line (more a guideline than a hard rule).
 
 ### Coding style
 
@@ -373,16 +364,12 @@ int foo(void)
 }
 ```
 
-### Coding style
-
 ```c
 if (cond) {
 	do_foo();
 	do_bar();
 }
 ```
-
-### Coding style
 
 ```c
 if (cond) {
@@ -402,8 +389,6 @@ else
 	do_baz();
 ```
 
-### Coding style
-
 ```c
 int get_bar(struct bar *p)
 {
@@ -419,11 +404,12 @@ int get_bar(struct bar *p)
 
 ### Kernel space
 
-- No access to the usual libc
-- No unbreakable memory protection
-- No floating-point operations
-- Fixed-size stack
-- Preemptive and SMP: synchronization and concurrency are major concerns
+- No access to the usual libc.
+- No unbreakable memory protection.
+- No floating-point operations.
+- Fixed-size stack.
+- Preemptive and Symetric Multi-Processors (SMP) capable. Synchronization and
+  concurrency are major concerns.
 
 ### Unique bugs
 
@@ -472,7 +458,7 @@ static void __exit hello_exit(void)
 module_init(hello_init);
 module_exit(hello_exit);
 
-MODULE_LICENCE("GPL");
+MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Hello module");
 MODULE_AUTHOR("Rémi Audebert");
 ```
@@ -481,10 +467,10 @@ MODULE_AUTHOR("Rémi Audebert");
 
 #### Macros
 
-- `__init`: the code is discarded after initialization (both for static and
-  module compilation)
-- `__exit`: the code is discarded if the module is built statically or if
-  module unloading is disabled
+- `__init`: The code is discarded after initialization (both for static and
+  module compilation).
+- `__exit`: The code is discarded if the module is built statically or if
+  module unloading is disabled.
 
 #### Module setup/cleanup
 
@@ -497,21 +483,21 @@ void mod_exit(void);
 
 #### Module metadata
 
-- Retrievable using `modinfo`
-- Licence is important:
-    - Non free software modules have no access to GPL exported symbols
-    - Non free modules set the proprietary taint flag on the kernel
+- Retrievable using `modinfo`.
+- `MODULE_LICENSE` is important:
+    - Non-free software modules have no access to GPL exported symbols.
+    - Non-free modules set the proprietary taint flag on the kernel.
 - Also useful: `MODULE_VERSION`, `MODULE_INFO`, `MODULE_SOFTDEP`
 - More information: `include/linux/module.h`
 
-### `printk`
+### `printk()`
 
-- `printk` is the kernel space version of `printf`.
-- Select the logging level:
-    - `pr_emerg, pr_alert, pr_crit, pr_err, pr_warn, pr_notice, pr_info, pr_debug`
+- `printk()` is the kernel space version of `printf`.
+- Multiple logging levels:
+    - `pr_emerg(), pr_alert(), pr_crit(), pr_err(), pr_warn(), pr_notice(), pr_info(), pr_debug()`
 - Modern code uses `pr_xxx`.
-- `pr_devel` while you develop your code
-- `pr_cont` allow multiline messages
+- `pr_devel()` while you develop your code.
+- `pr_cont()` for continuing lines with no newline (`\n`).
 - Formats are described in `Documentation/printk-formats.txt`.
 
 ### `pr_fmt`
@@ -595,12 +581,22 @@ $ echo 'module mymodule +p' > control
 
 Warning: Linux moves fast, those books contain outdated information.
 
-- Linux device drivers: https://lwn.net/images/pdf/LDD3
+- Linux device drivers: [https://lwn.net/images/pdf/LDD3](https://lwn.net/images/pdf/LDD3)
 - Linux Kernel Development
 - Linux System Programming
 - Linux in a Nutshell
 - Understanding the Linux Kernel
 - The Linux Programming Interface
+
+### Contact info
+
+- Rémi Audebert
+    - halfr on irc.rezosup.org
+    - halfr@lse.epita.fr
+- Pierre Surply
+    - Ptishell on irc.rezosup.org
+    - pierre.surply@lse.epita.fr
+
 
 <!---
 vim: spl=en spell:

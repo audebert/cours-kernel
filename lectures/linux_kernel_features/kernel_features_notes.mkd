@@ -2,6 +2,20 @@
 
 # Main features
 
+- Portable : Linux peut fonctionner sur différentes architectures, il n'est pas
+lié à une en particulier, même si certaines sont plus développées que d'autres.
+- Versatile : Linux peut être utilsé pour des charges très différentes :
+  super calculatueurs, serveurs haute disponibilité, téléphones, on le croise de
+  plus en plus dans l'embarqué et finalement, même sur le desktop.
+- Stable : Probablement une de ses principales forces, on peut toujours faire
+  fonctionner des binaires compilés pour Linux 1 sur un Linux 4, bon en
+  pratique c'est parce que ces binaires ne font rien de particulièrement
+  avancé et sont juste des binaires POSIX.
+- Mature : On peut le voir avec les changements de version "majeure", qui
+  n'indique rien de particulier, car il n'y a pas eu de changement majeur dans
+  Linux depuis quelque temps.
+- Robust : Essayez-donc de casser Linux :)
+
 # Who is behind linux?
 
 Source: linux annual development report from the linux foundation.
@@ -55,13 +69,21 @@ dire étant donné qu'il peut ne y avoir de lien direct entre un driver dans lin
 et un périphérique. Certains drivers sont génériques et peuvent supporter
 plusieurs périphériques différents.
 
-Concernant les architectures, il y a 29 sous-dossiers dans le dossier arch/,
+Concernant les architectures, il y a 31 sous-dossiers dans le dossier arch/,
 mais ça ne veut pas dire grand chose, étant donné toutes les variantes et
 micro-architectures qui peuvent existent pour chaque plateform.
 
 arm:
-    - 62 micro-architectures
-    - 121 boards de defconfig
+    - 65 micro-architectures
+    - 109 boards de defconfig
+
+Une architecture, ou un périphérique, est supportée tant qu'il reste au moins
+un utilisateur du système, ou que ça ne pose pas de problème majeur de
+conserver le support d'un système. Par exemple le support de i386, qui pour
+rappel est sorti en 1986 et tournait à 16MHz a été enlevé pour linux 3.8, dans
+le but de simplifier la gestion des processeurs x86.
+
+http://lkml.iu.edu/hypermail/linux/kernel/1212.1/01152.html
 
 # Android
 
@@ -81,6 +103,10 @@ These changes are beginning to go into the staging/ area of the kernel, as of
 
 Senior Vice President at Google, where he oversees Android, Chrome, and Google
 Apps.
+
+Puis finalement fin de l'année dernière, le code de binder, le système d'IPC
+d'android est sorti de staging, sous pretexte que de toute façon il devra être
+supporté correctement par le Linux mainline.
 
 https://raw.githubusercontent.com/gregkh/android-presentation
 http://free-electrons.com/doc/training/android/android-slides.pdf
@@ -110,9 +136,15 @@ control the build process but instead specify values that kernel source can
 access as a preprocessor macro. For example, a configuration option can specify
 the size of a statically allocated array.
 
+# Config files
+
+Chose rigolote, le fichier de configuration s'appelle toujours i386_defconfig
+alros que le support de l'i386 a été enlevé pour linux 3.8.
+
 # Coding style
 
 Like any self-respecting Unix kernel, the Linux kernel is programmed in C.
+
 Perhaps sur- prisingly, the kernel is not programmed in strict ANSI C. Instead,
 where applicable, the kernel developers make use of various language extensions
 available in gcc (the GNU Compiler Collection, which contains the C compiler
@@ -120,7 +152,10 @@ used to compile the kernel and most everything else written in C on a Linux
 system).  The kernel developers use both ISO C991 and GNU C extensions to the C
 language.  These changes wed the Linux kernel to gcc, although recently one
 other compiler, the Intel C compiler, has sufficiently supported enough gcc
-features that it, too, can compile
+features that it, too, can compile the kernel.
+
+Il y a aussi un effort, nommé LLVM Linux, pour compiler le kernel avec clang,
+principalement pour les archi ARM, x86 and x86_64.
 
 # Git 
 
