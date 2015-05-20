@@ -1,0 +1,17 @@
+% Linux - Misc devices
+% Rémi Audebert - Pierre Surply
+% 2015-05-22
+
+# Misc devices
+
+### Description
+
+- `misc` is a type of char devices.
+- Used for *small* drivers.
+- Have a name
+- Appear at `/dev/NAME`.
+
+### Registering a misc device
+
+```C
+```
