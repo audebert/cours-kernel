@@ -1,7 +1,0 @@
-.*
-*.symvers
-*.ko
-*.o
-*.mod.*
-modules.order
-__pycache__
