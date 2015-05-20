@@ -1,0 +1,108 @@
+% Linux - Modules and misc devices
+% Rémi Audebert - Pierre Surply
+% 2015-05-22
+
+# Modules
+
+### What is a module?
+
+```bash
+$ file hello.ko
+hello.ko: ELF 64-bit LSB relocatable, x86-64, version 1 (SYSV), not stripped
+```
+
+### Build system
+
+- The Linux build system is complex, yet is very easy to use, and almost always
+  produce the desired result.
+- Compiling a module is trivial:
+
+#### `Makefile`
+
+```Makefile
+obj-m := hello.o
+```
+
+#### Build
+
+```bash
+$ make -C ~/linux M=`pwd` modules
+```
+
+### Build system
+
+- The Linux build system is complex, yet is very easy to use, and almost always
+  produce the desired result.
+- Compiling a module is trivial:
+
+#### `Makefile`
+
+```Makefile
+obj-m := hello.o
+hello-objs := hello-file1.o hello-file2.o
+```
+
+#### Build
+
+```bash
+$ make -C ~/linux M=`pwd` modules
+```
+
+### Build system
+
+- Using a variable from Kconfig:
+
+#### `Makefile`
+
+```Makefile
+obj-$(CONFIG_HELLO) := hello.o
+hello-objs := hello-file1.o hello-file2.o
+```
+
+### Cryptographic signing of modules
+
+- Since Linux 3.7
+- Requires `CONFIG_MODULE_SIG=y`.
+- Cryptographically signs modules during installation (`make modules_install`)
+- Uses RSA and SHA-{1,224,256,384,512}.
+- The private key is only needed during the build, after which it can be
+  deleted or stored securely.
+- The public key gets built into the kernel so that it can be used to check the
+  signatures as the modules are loaded.
+- See public keys in `/proc/keys`.
+
+### Inserting a module
+
+- Userspace tools such as `insmod` or `modprobe`.
+- Use the `init_module()` syscall, which performs:
+
+    - Performs signature checks (if enabled)
+    - Allocates kernel memmory
+    - Copies the module .text section
+    - Resolve the symbols using the kernel symbol table
+
+### Versions
+
+- A module has to be recompiled for each version fo the kernel that you want to
+  link it to.
+
+### Parameters
+
+Parameters are typed `key=value` settings.
+
+### Available types
+
+### Defining a parameters
+
+### Modifiying a parameter
+
+# Misc devices
+
+### Description
+
+- `misc` is a type of char devices.
+- Used for *small* drivers.
+- Have a name
+- Appear at `/dev/NAME`.
+
+### Registering a misc device

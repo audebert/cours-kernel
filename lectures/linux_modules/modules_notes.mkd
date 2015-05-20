@@ -1,0 +1,20 @@
+# Build system
+
+La commande make commence par se déplacer dans les sources de Linux, `-C`, là
+elle trouve le Makefile principal, ainsi que les fichiers de configuartion.
+
+Puis la varaible `M=` lui demande de se déplacer dans le dossier courant au
+moment où il va essayer d'éxecuter la règle `modules`.
+
+Cette règle va compiler en module les objets listés dans la variable `obj-m`.
+
+# Module signature
+
+- RSA and SHA512, note: ça implique que le module de hash soit built-in, et pas
+  en module, sinon ça fait une dépendance cyclique.
+
+https://www.kernel.org/doc/Documentation/module-signing.txt
+
+- Mais ce n'est vraiment utile que si le kernel aussi est signé, cf.
+  trusted-boot.
+
