@@ -1,0 +1,38 @@
+Kernel Programming I - Workshop 1
+=================================
+
+Requirements
+------------
+
+- Linux kernel source, preferably mainline, get it on http://kernel.org
+- A setup to test your changes, see workshop 0.
+
+Char device
+-----------
+
+This week you will write learn about char device drivers, often called `cdev`.
+
+You will have to use the following references:
+
+- Linux Device Driver: [in pdf](http://lwn.net/Kernel/LDD3/) or [online](http://www.makelinux.net/ldd3/)
+
+You will have to implement the "scull" char driver from LDD3.
+
+Module
+------
+
+- Create an out of tree skeleton module, make sure it compiles and insert
+correctly into your kernel.
+
+Major and minor numbers
+-----------------------
+
+- Use the kernel facilities to generate a major and a minor number for your
+driver and device. Don't forget to free these resources on module exit.
+
+File Operations
+---------------
+
+- Fill the file operation structure that will be used by your driver.
+- Implement the ``open`` and ``release`` file operations.
+- Implement the ``read``, ``write`` and ``ioctl`` file operations.

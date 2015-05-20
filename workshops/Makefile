@@ -1,4 +1,4 @@
-WORKSHOPS = linux_0_bootstrap
+WORKSHOPS = linux_0_bootstrap linux_1_char_devices
 OUTPUT    = $(addsuffix .html, $(WORKSHOPS))
 
 .PHONY: all
