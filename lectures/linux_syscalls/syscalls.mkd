@@ -1,4 +1,4 @@
-% Kernel I - Syscalls
+% Linux - Syscalls
 % Rémi Audebert - Pierre Surply
 % 2015-05-22
 
@@ -23,7 +23,9 @@ Syscalls usages:
 
 # The syscall userland interfaces
 
-## On x86 32-bits
+## In assembly
+
+### On x86
 
 ```nasm
 mov eax, 1 ; exit
@@ -33,7 +35,7 @@ int 0x80 ; or sysenter
 - Syscall number: `eax`
 - Arguments: `ebx`, `ecx`, `edx`, `esi`, `edi`, `ebp`, then use the stack
 
-## On x86 64-bits
+### On x86_64
 
 
 ```nasm
@@ -53,12 +55,17 @@ syscall
 long syscall(long number, ...);
 ```
 
+- Copies the arguments and syscall number to the registers.
+- Traps to kernel code.
+- Sets `errno` if the syscall returns an error.
+
 ## Don't panic!
 
 - You will learn all about that in kernel from scratch!
 - You almost never use direct calls to `syscall(2)`.
-- Your libc provides wrappers for the syscalls you need.
+- Your libc provides wrappers for most of the syscalls you need.
 - Linux also abstracts all thoses details in kernel code.
+- For a list of the Linux system calls, see `syscalls(2)`.
 
 ## vdso(7)
 
@@ -86,21 +93,6 @@ A context is:
 - The state of a process (including threads):
     - Memory state: stack, page tables, etc.
     - CPU state: registers, caches, etc.
-    - Misc data: pid, cwd, sockets, etc.
-
-- The context switch cost varies:
-    - Non-scheduling:
-        - User -> Kernel -> User: small
-    - Scheduling:
-        - Thread0 -> Threadx -> Thread0 (same CPU): small
-        - Thread0 -> Threadx -> Thread0 (other CPU): medium
-        - Thread0 -> Threadx -> Thread0 (other socket): big
-
-\small
-
-More info http://youtu.be/KXuZi9aeGTw
-
-- User-level threads... with threads. - Paul Turner - Google
 
 ## vdso in action
 
@@ -181,7 +173,7 @@ pr_debug("The process is \"%s\" (pid %i)\n",
 	 current->comm, current->pid);
 ```
 
-### schedule
+### schedule()
 
 \small
 
@@ -224,9 +216,9 @@ See `arch/x86/syscalls/syscall_{32,64}.tbl`.
 514     x32     ioctl                   compat_sys_ioctl
 ```
 
-## Genetation
+## Generation
 
-- Kbuild calls the `syscalltbl.sh` scripts to generates `arch/x86/include/generated/asm/syscalls_{64,32}.h`
+- Kbuild calls the `syscalltbl.sh` to generate `arch/x86/include/generated/asm/syscalls_{64,32}.h`
 - Same with `syscallhdr.sh`
 
 # A guided tour of some syscalls
@@ -275,8 +267,10 @@ int ioctl(int d, unsigned long request, ...);
 ```
 
 - Control devices.
-- A big mess.
-- See LDD3, Chapter 6: Advanced Char Driver Operations
+- A big mess:
+    - Request numbers encodes data.
+    - Request data is untyped (`void *`).
+- See LDD3, Chapter 6: Advanced Char Driver Operations.
 
 ## clone
 
@@ -338,12 +332,8 @@ int personality(unsigned long persona);
 - Tweak:
     - uname-2.6
     - exposed architecture (`i386`, `i486`, `i586`, etc.)
-    - STICKY_TIMEOUT
+    - `STICKY_TIMEOUT`
     - ...
-
-## `sigaction` and `rt_sigaction`
-
-http://stackoverflow.com/questions/12889116/what-is-the-difference-between-signal-and-rt-signal-syscalls-in-linux
 
 ## reboot
 
@@ -366,11 +356,34 @@ LINUX_REBOOT_MAGIC2C (that is, 537993216) are permitted as value for
 magic2. (The hexadecimal values of these constants are meaningful.)
 ```
 
+## `rt_XXX` syscalls
+
+The addition or real-time signals required the widening of the signal set
+structure (`sigset_t`) from 32 to 64 bits.  Consequently, various system calls
+were superseded by new system calls that supported the larger signal sets.
+
+
++-----------------------+----------------------+
+| Linux < 2.0           | Linux >= 2.2         |
++=======================+======================+
+| `sigaction(2)`        | `rt_sigaction(2)`    |
++-----------------------+----------------------+
+| `sigpending(2)`       | `rt_sigpending(2)`   |
++-----------------------+----------------------+
+| `sigprocmask(2)`      | `rt_sigprocmask(2)`  |
++-----------------------+----------------------+
+| `sigreturn(2)`        | `rt_sigreturn(2)`    |
++-----------------------+----------------------+
+| `sigsusprend(2)`      | `rt_sigsuspend(2)`   |
++-----------------------+----------------------+
+| `sigtimedwait(2)`     | `rt_sigtimedwait(2)` |
++-----------------------+----------------------+
+
 ## Going further than syscalls
 
 - There are places in the kernel where the complexity of the task goes bewond a
   call to a function.
-- `ioctl` has grew dangerously
+- `ioctl` has grew dangerously.
 - For example, `netlink(7)` aims to replace `ioctl` for network configuration.
 
 ## References
@@ -378,6 +391,7 @@ magic2. (The hexadecimal values of these constants are meaningful.)
 - http://lwn.net/Articles/604287/
 - http://lwn.net/Articles/604515/
 - https://www.kernel.org/doc/htmldocs/kernel-hacking
+- Searchable Linux Syscall Table: https://filippo.io/linux-syscall-table/
 
 ## Contact info
 
