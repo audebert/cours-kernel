@@ -24,14 +24,6 @@ The kernel is the part of the system that:
 - Secure
 - Robust
 
-### Who is behind Linux?
-
-- An open source community
-- Around 1200 developers for one release
-- Around 200 maintainers
-- Around 80% of the changes are sponsored
-- Linus Torvalds makes the official releases
-
 ### Why know Linux?
 
 > Finding Linux talent is becoming more of a priority for hiring managers.
@@ -43,6 +35,14 @@ The kernel is the part of the system that:
 
 > -- Linux Jobs Report 2014
 
+### Who is behind Linux?
+
+- An open source community
+- Around 1200 developers for one release
+- Around 200 maintainers
+- Around 80% of the changes are sponsored
+- Linus Torvalds makes the official releases
+
 ### Current status
 
 - GPLv2
@@ -53,6 +53,7 @@ The kernel is the part of the system that:
     - significant new features
     - added device support
     - improved performance
+- Mainline repository: `git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git` (1.5G)
 
 ### Usage and hardware support
 
@@ -81,8 +82,6 @@ Linux supports more computer architecture than any other OS.
 ### The source
 
 ![kernel.org](kernel_org.png)
-
-- `git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git` (1.5G)
 
 ### The kernel source tree (1/3)
 
@@ -123,6 +122,22 @@ Linux supports more computer architecture than any other OS.
 - `Makefile` Base kernel Makefile
 - `README` Overview of the kernel
 - `REPORTING-BUGS` Instructions for reporting bugs
+
+### Development process
+
+- Each file has a set of maintainers.
+- They are responsible for triaging bugs, reviewing patches and directing changes.
+- Patches are sent to mailing-lists for review.
+- Once approved, they are sent to the maintainer of the subsystem.
+- Subsystem maintainers review them and place them in a special branch.
+- They send this branch to Linus Torvalds, that will merge it to his branch.
+
+### Release cycle
+
+- The merge window is open (~2 weeks).
+- Release candidates (`-rc`) are published.
+- No new feature is added, only bug fixes (~6-10 weeks).
+- The final release is tagged by Linus Torvalds.
 
 ### Configuring the kernel
 
