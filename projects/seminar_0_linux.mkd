@@ -4,6 +4,8 @@ Kernel Programming I - Linux
 Introduction
 ------------
 
+Here are the 3 assignments for **Kernel Programming I - Linux**.
+
 General remarks:
 
 - All the code you give us must be formatted for the Linux coding style.
@@ -18,8 +20,8 @@ To: halfr@lse.epita.fr, surply@lse.epita.fr
 Subject: [KERNEL] LOGIN_X LOGIN_Y - PROJECT NAME
 ```
 
-Project 1 - syscall
--------------------
+Part 1 - syscall
+----------------
 
 The aim of this project is to add a new syscall to the Linux kernel.
 
@@ -68,8 +70,8 @@ Bonus:
 
 - Make your syscall opt-in using kconfig.
 
-Project 2 - lkm
----------------
+Part 2 - lkm
+------------
 
 The goal of this project is to create a simple loadable kernel module.
 
@@ -110,8 +112,8 @@ Grading:
 - Your module must compile and run with the latest Linux stable Linux release.
 - Your module must work according to the requirements.
 
-Project 3 - rootkit
--------------------
+Part 3 - rootkit
+----------------
 
 Now that you are good at adding syscalls and creating modules, you have to
 create a module that modifies the syscall table, and hooks (*replaces*) the
