@@ -7,11 +7,109 @@
 ### Description
 
 - `misc` is a type of char devices.
-- Used for *small* drivers.
-- Have a name
+- Used for *small* drivers:
+
+	- Various mice
+	- Watchdog
+	- Clocks
+	- ...
+
+- They have a name.
 - Appear at `/dev/NAME`.
+- Can be integrated into `modalias`: `MODULE_ALIAS_MISCDEV(minor)`:
+
+	- `char-major-10-minor`
+
+### Device definition
+
+```C
+#include <linux/miscdevice.h>
+
+static struct miscdevice mymisc = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name  = "mymisc",
+	.fops  = &mymisc_fops,
+};
+
+```
+
+- Minor (and major) numbers are described in the next lectures.
 
 ### Registering a misc device
 
 ```C
+int misc_register(struct miscdevice *misc);
 ```
+
+```C
+static int __init mymisc_init(void)
+{
+	int r;
+
+	r = misc_register(&mymisc);
+	if (ret < 0) {
+		pr_warn("misc_register() failed: %d\n", r);
+		return r;
+	}
+
+	return 0;
+}
+```
+
+### File operations
+
+```C
+static struct file_operations mymisc_fops = {
+	.owner		= THIS_MODULE,
+	.read		= mymisc_read,
+	.write		= mymisc_write,
+	.open		= mymisc_open,
+	.release	= mymisc_release,
+};
+```
+
+
+### `open()` and `release()`
+
+```C
+int mymisc_open(struct inot *i, struct file *f);
+```
+
+- Called when user space opens `/dev/mymisc`.
+- `struct inode` represents a element of the file system.
+- `struct file` is created every time a file is openend.
+- Allows initializing the `private_data` member of `struct file`.
+
+```C
+int mymisc_release(struct inode *i, struct file *f);
+```
+
+- Called when user space closes the file.
+
+### `read()`
+
+```C
+ssize_t mymisc_read(struct file *file,
+		    char __user *buf,
+		    size_t count,
+		    loff_t *off);
+```
+
+- Called when user space uses the `read()` syscall on the device.
+- `buf`: buffer of the user (cf. `__user`).
+- `count`: size of the buffer.
+- `ppos`: must be updated to keep the current location.
+- Returns the number of bytes read.
+
+### `write()`
+
+```C
+ssize_t mymisc_write(struct file *file,
+		     char __user *buf,
+		     size_t count,
+		     loff_t *off);
+```
+
+- Called when user space uses the `write()` syscall on the device.
+- The opposite of `read`, must read at most `count` bytes from `buf` and write
+  it to the device, update `off` and return the number of bytes written.

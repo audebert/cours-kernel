@@ -4,6 +4,13 @@
 
 # Modules
 
+### Why modules?
+
+- Modules make it easy to develop drivers without rebooting.
+- Keeps the kernel image small and versatile.
+- Reduce boot time: don't spend time initializing drivers, devices and kernel
+  features you don't need now.
+
 ### What is a module?
 
 ```bash
@@ -153,7 +160,9 @@ usb:v05E3p0608d8537dc09dsc00dp01ic09isc00ip00in00
 - See devices supported by `modalias`: `less /lib/modules/$(uname -r)/modules.alias`
 - Example:
 
-    alias pci:v00001002d000099A4sv*sd*bc*sc*i* radeon
+```
+alias pci:v00001002d000099A4sv*sd*bc*sc*i* radeon
+```
 
 ### Parameters
 
