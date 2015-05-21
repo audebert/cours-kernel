@@ -117,9 +117,3 @@ Steps:
 
 Write 3 kernel modules. When loaded, each one should crash the kernel in a
 different way.
-
-Contact
-=======
-
-- halfr@lse.epita.fr
-- surply@lse.epita.fr
