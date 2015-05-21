@@ -6,13 +6,15 @@ Getting started
 
 ### Build a busybox
 
+Busybox is a simple user space.
+
 http://www.busybox.net/
 
 ```bash
 git clone git://git.busybox.net/busybox
 make defconfig # All features, no debug
 make menuconfig # Setup static linking
-make // Compile
+make # Build
 make install
 ```
 
