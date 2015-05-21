@@ -24,3 +24,8 @@ https://www.kernel.org/doc/Documentation/module-signing.txt
 http://unix.stackexchange.com/questions/26132/how-to-assign-usb-driver-to-device
 
 
+# Parameters
+
+http://www.makelinux.net/ldd3/chp-2-sect-8
+
+Several parameters that a driver needs to know can change from system to system

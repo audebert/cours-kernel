@@ -166,11 +166,23 @@ alias pci:v00001002d000099A4sv*sd*bc*sc*i* radeon
 
 ### Parameters
 
-Parameters are typed `key=value` settings.
+- Parameters are typed `key=value` settings.
+- They are defined as such:
 
-### Available types
+```C
+static char *bde = "Test.";
+static int votes = 1;
+module_param(bde, charp, S_IRUGO)
+module_param(votes, int, S_IRUGO)
+```
 
-### Defining a parameters
+- Available types: `bool`, `invbool`, `charp` (memory is auto-allocated),
+  `int`, `long`, `short`, `uint`, `ulong`, `ushort`
+- Arrays are also supported:
 
-### Modifiying a parameter
+```C
+module_param_array(name,type,num,perm);
+```
 
+- The parameters will appear in `/sys/module/MODULE/parameters/PARAM`.
+- The final field controls the permission value of this file.
