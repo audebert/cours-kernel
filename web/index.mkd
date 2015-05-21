@@ -4,12 +4,24 @@ Kernel Programming
 Workshops
 ---------
 
-- [Workshop 0](workshop_0_bootstrap.html)
+Seminar 0:
 
-Lectures
---------
+- [Linux Workshop 0](workshop_0_bootstrap.html)
+- Kernel from scratch: make a kernel bootable on an i386 emulator that prints
+  `Hello World!` on the screen and serial port. For that, you must work on:
 
-- [Linux introduction](linux_kernel_features.html)
+	- A linker script.
+	- C sources of your kernel, with:
+
+		- A setup of the serial line as: 38400 baud, 8N1
+		- A `printk()` function.
+
+	- A Makefile with the following recipes:
+
+		- Building the kernel image
+		- Debugging
+
+	- For more information, follow the slides from Lecture #1.
 
 Contact
 -------

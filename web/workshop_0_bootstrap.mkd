@@ -1,14 +1,15 @@
-Kernel Programming I - Workshop 0
-=================================
+Kernel Programming I - Workshop
+===============================
 
 Getting started
 ---------------
 
 ### Build a busybox
 
-Busybox is a simple user space.
+[Busybox](http://www.busybox.net/) is a simple user space. Building it will give you:
 
-http://www.busybox.net/
+- An `init` program, the first program ran by the kernel.
+- Simple versions of the usual user land tools (`cd`, `cat`, `insmod`, etc.)
 
 ```bash
 git clone git://git.busybox.net/busybox
@@ -19,6 +20,8 @@ make install
 ```
 
 ### Build a rootfs
+
+The rootfs is the first file system, loaded by the kernel on `/`.
 
 ```bash
 dd if=/dev/zero of=disk.img bs=1M count=16
@@ -65,11 +68,23 @@ Getting things done
 
 ### RootNFS
 
-- Create a rootfs
-- Setup a NFS server
-- Edit /etc/exports to export /path/to/rootfs
-- ``exportfs -av``
-- Command line: "root=/dev/nfs nfsroot=10.0.2.2:/path/to/rootfs rw ip=10.0.2.15::10.0.2.1:255.255.255.0"
+- Create a rootfs, the one from busybox is a good start.
+- Setup a NFS server, for that see your distribution's manual.
+- Edit `/etc/exports` to export `/path/to/your/rootfs`
+- Enable the exports: ``exportfs -av``
+- Update the kernel command line you specify in `qemu`:
+
+```
+root=/dev/nfs nfsroot=10.0.2.2:/path/to/rootfs rw ip=10.0.2.15::10.0.2.1:255.255.255.0
+```
+
+- By default, `qemu` provides a user mode network stack, which requires no
+  administrator privilege to run. Some network protocols won't work, such as
+  `ICMP` (you won't be able to `ping` the vm).
+- `10.0.2.2` is the default IP for the host machine, it is only visible from
+  the virtual machine.
+- `rw` means that file system is writeable.
+- `ip=...` defines the network configuration for the emulated network interface.
 
 ### myInit
 
@@ -82,9 +97,10 @@ Init, or PID1, is the first program started by the kernel.
 
 Note:
 
-- The init program must never exit.
+- The init program must never exit. This is the only thing the kernel expects
+  from this process.
 
-### sys_hello
+### `sys_hello`
 
 Write a syscall which, when called, prints "hello, world!" on the console.
 
