@@ -1,0 +1,18 @@
+Kernel Programming
+==================
+
+Workshops
+---------
+
+- [Workshop 0](workshop_0_bootstrap.html)
+
+Lectures
+--------
+
+- [Linux introduction](linux_kernel_features.html)
+
+Contact
+-------
+
+- halfr@lse.epita.fr
+- surply@lse.epita.fr
