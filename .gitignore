@@ -6,3 +6,4 @@
 *.mod.*
 modules.order
 __pycache__
+*.html
