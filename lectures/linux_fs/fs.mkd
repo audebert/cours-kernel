@@ -1,0 +1,110 @@
+% Linux - File systems
+% Rémi Audebert - Pierre Surply
+% 2015-06-04
+
+# Introduction
+
+### File systems
+
+- Located in the `fs/` directory of the Linux sources.
+- Can be built-in or loaded as modules.
+- Provide a wide range of functionality:
+
+    - Journals
+    - Compression
+    - Snapshots
+    - Redundancy
+
+- Two general purposes of file system:
+
+    - File storage, e.g., ext4, zfs or btrfs.
+    - Pseudo file systems, e.g., procfs, sysfs or kdbusfs
+
+### The VFS
+
+- A common interface to all the file systems.
+- A hierarchy of directories, starting with `/`.
+- Each Linux distribution chooses how to organize it.
+
+    - A pretty outdated description can be read in `hier(7)`.
+    - Systemd's modernized version is described in `file-hierarchy(7)`.
+
+- Userspace interacts with the VFS using a set of syscalls: `open(2)`,
+  `creat(2)`, `unlink(2)`, etc.
+
+### Changing `/`
+
+- `chroot(2)` can be used to change the root of the filesystem hierarchy of the
+  current process. This is the syscall used by `chroot(1)` and
+  `switch_root(8)`.
+
+#### Namespaces
+
+- A process can get a completely different set of mount points, this is called
+  changing of mount namespace.
+- The list of all filesystems currently mounted can be seen in
+  `/proc/[pid]/mounts`.
+- More namespaces exist: `PID`, `USER`, `NET`, `IPC` and `UTS`.
+- For more information, see `namespaces(7)`
+
+### Path resolution
+
+- What happens when you call `open(my_path, my_options)`?
+- Is it absolute (starting with a `/`) or relative? This defines the starting
+  lookup directory.
+
+### Mounts
+
+- The `mount(1)` utility can be used to display the list of mountpoints in your
+  current namespace.
+- A mount is triplet of:
+
+    - Filesystem type (may be none)
+
+- Special mount type: the `bind` mount that links a directory to another.
+
+# Anatomy of the VFS
+
+### `struct file`
+
+### Dirent
+
+### Inodes
+
+### Caches
+
+- Multiple caches help avoiding immediate access to the underlying hardware,
+  and other internal data structures.
+- Inode caches
+
+# Adding a file system in Linux
+
+### Why creating a new file system?
+
+- Adding entries to `/proc` is discouraged.
+- A single misc device may not be enough for what you what to do.
+- Adding "new syscalls" using `ioctl(2)` is also discouraged.
+
+### FUSE: Filesystem in Userspace
+
+- A filesystem in which data and metadata are provided by an ordinary userspace
+  process.The filesystem can be accessed normally through the kernel interface.
+- It consists of a kernel module (`fuse.ko`), a userspace library
+  (`libfuse.so`) and mount utilities (`fusemount`, `mount.fuse`).
+- Binding are available for other languages, eg. python.
+- Projects using FUSE:
+
+    - gdrivefs (Google Drive)
+    - rar2fs (rar archives)
+    - encfs (encrypted files)
+
+- http://fuse.sourceforge.net/
+
+### CUSE: Character device in Userspace
+
+- Based on the fuse kernel code (`fs/fuse/cuse.c`).
+- Userland can create 
+
+<!---
+vim: spl=en spell:
+-->
