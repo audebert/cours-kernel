@@ -6,7 +6,8 @@
 
 ### File systems
 
-- Located in the `fs/` directory of the Linux sources.
+- Located in the `fs/` directory of the Linux sources, along with file related
+  core.
 - Can be built-in or loaded as modules.
 - Provide a wide range of functionality:
 
@@ -26,11 +27,12 @@
 - A hierarchy of directories, starting with `/`.
 - Each Linux distribution chooses how to organize it.
 
-    - A pretty outdated description can be read in `hier(7)`.
+    - Linux foundations hierarchy:
+      http://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.txt
     - Systemd's modernized version is described in `file-hierarchy(7)`.
 
 - Userspace interacts with the VFS using a set of syscalls: `open(2)`,
-  `creat(2)`, `unlink(2)`, etc.
+  `creat(2)`, `unlink(2)`, `mount(2)`, `chroot(2)`, `symlink(2)`, etc.
 
 ### Changing `/`
 
@@ -40,7 +42,8 @@
 
 #### Namespaces
 
-- A process can get a completely different set of mount points, this is called
+- A process can get a completely different set of mount points by an invocation
+  of the `clone(2)` syscall with the `CLONE_NEWNS` flag set. This is called
   changing of mount namespace.
 - The list of all filesystems currently mounted can be seen in
   `/proc/[pid]/mounts`.
@@ -49,33 +52,123 @@
 
 ### Path resolution
 
-- What happens when you call `open(my_path, my_options)`?
-- Is it absolute (starting with a `/`) or relative? This defines the starting
-  lookup directory.
+- A kernel operation.
+- Is the path absolute (starting with a `/`) or relative? This defines the
+  starting lookup directory.
+- For each nonfinal component of the pathname, look it up the current
+  directory, if:
+
+    - the process does not have search permission, return `EACCES`
+    - the component is not found, return `ENOENT`
+    - the component is found, but not a directory, return `ENOTDIR`
+    - the component is found and is a directory, set the current lookup
+      directory to that directory and go to the next component
+    - the component is found and is a symlink, resolve it, return the error if
+      any (e.g., not a directory) , or set the directory (the kernel checks for
+      recursion)
+
+- Depending on the syscall, the final entry can be a directory or something
+  else.
+
+<!---
+Why does this matters? Because other operating systems have different path
+resolution rules, such as windows, where depending on a system policy, only
+the last component of the path needs to be searchable by the process.
+
+Linux provides two interesting capabilities:
+
+       The CAP_DAC_OVERRIDE capability overrides all permission checking,  but
+       grants  execute  permission  only when at least one of the file's three
+       execute permission bits is set.
+
+       The CAP_DAC_READ_SEARCH capability grants read and search permission on
+       directories, and read permission on ordinary files.
+
+-->
+
+### Riddle!
+
+```bash
+$ rm foo/
+rm: cannot remove ‘foo/’: Is a directory
+$ rmdir foo/
+rmdir: failed to remove ‘foo/’: Not a directory
+```
+
+- What is `foo/`?
+
+<!---
+Answer: foo is a symlink to a directory.
+-->
 
 ### Mounts
 
-- The `mount(1)` utility can be used to display the list of mountpoints in your
-  current namespace.
-- A mount is triplet of:
+- The `mount(1)` utility can be used to display the list of mount points in
+  the current process' namespace.
+- A mount is composed of :
 
-    - Filesystem type (may be none)
+    - Filesystem type
+    - Source (may be optional)
+    - Mount point
+    - Mount flags
+    - Mount data (optional)
 
-- Special mount type: the `bind` mount that links a directory to another.
+<!---
+The filesystem
+-->
+
+#### Some `mount(2)` options
+
+- `MS_BIND`: the `bind` mount that makes a file or directory visible at another
+  point within a filesystem.
+- `MS_MOVE`: moves a mount point.
+
+<!---
+For MS_MOVE, The filesystemtype, mountflags, and data arguments are ignored.
+-->
+
+### Limits of the VFS
+
+- Most storage filesytems provide userspace tools to interact with them:
+  `mkfs.<filesystem>`, `fsck.<filesystem>`
+
+#### `btrfs`
+
+- Provides a misc device for advanced interaction: `/dev/btrfs-control`.
+- Userspace tool used to issue commands: `btrfs(8)`.
 
 # Anatomy of the VFS
 
-### `struct file`
+### Introduction
 
-### Dirent
+- Mostly oriented toward traditional Unix filesystems: other filesystems must
+  map their internal implementation with the Linux VFS structures.
+- Four main objects:
 
-### Inodes
+    - *superblock*, information about a mounted filesystem
+    - *dentry*, information about adirectory entry
+    - *inode*, information about a specific file on a filesystem
+    - *file*, information about an opened file
+
+<!---
+Very similar to the ext2 filesystem.
+
+- FAT filesystems do not have inodes
+-->
 
 ### Caches
 
-- Multiple caches help avoiding immediate access to the underlying hardware,
-  and other internal data structures.
-- Inode caches
+Multiple caches help avoiding immediate access to the underlying hardware, or other internal data structures.
+
+- dentry cache (`dcache`): a view of the currently accessed paths.
+- inode caches: if an inode can be uniquely identified by an `int`, make a
+  cache out of it.
+- block device caches: keep pages of data in RAM instead of fetching them at
+  each request.
+
+<!---
+https://www.kernel.org/doc/Documentation/filesystems/vfs.txt
+-->
 
 # Adding a file system in Linux
 
@@ -84,6 +177,149 @@
 - Adding entries to `/proc` is discouraged.
 - A single misc device may not be enough for what you what to do.
 - Adding "new syscalls" using `ioctl(2)` is also discouraged.
+
+### Registering a pseudo filesystem
+
+```C
+static struct file_system_type fs_type = {
+        .owner          = THIS_MODULE,
+        .name           = "myfs",
+        .mount          = fs_mount,
+        .kill_sb        = fs_kill_sb,
+        .fs_flags       = FS_USERNS_MOUNT,
+};
+
+static int __init init_tue_fs(void)
+{
+        return register_filesystem(&fs_type);
+}
+
+static void __exit exit_tue_fs(void)
+{
+        unregister_filesystem(&fs_type);
+}
+```
+
+### `fs_mount()`
+
+Setups the super block, returns the root `dentry`.
+
+```C
+static struct dentry *fs_mount(struct file_system_type *fs_type,
+                     int flags, const char *dev_name,
+                     void *data)
+{
+        struct super_block *sb;
+        int r;
+
+        sb = sget(fs_type, NULL, fs_super_set, flags, domain);
+        r = fs_super_fill(sb);
+        if (r)
+            return r;
+
+        return dget(sb->s_root);
+}
+```
+
+### `fs_mount()` (refactored)
+
+```C
+static struct dentry *fs_mount(struct file_system_type *fs_type,
+                     int flags, const char *dev_name,
+                     void *data)
+{
+        return mount_nodev(fs_type, flags, data, fs_super_fill);
+}
+```
+
+### `fs_super_fill()`
+
+Setup the filesystem metadata, create root inode.
+
+```C
+#define MYFS_SUPER_MAGIC 0x12345678
+
+int fs_super_fill(struct super_block *sb, void *data, int silent)
+{
+        struct inode *inode;
+
+        sb->s_blocksize = PAGE_CACHE_SIZE;
+        sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
+        sb->s_magic = MYFS_SUPER_MAGIC;
+        sb->s_op = &fs_super_sops;
+        sb->s_time_gran = 1;
+
+        inode = fs_inode_get(sb, NULL);
+        sb->s_root = d_make_root(inode);
+        if (!sb->s_root)
+            return -ENOMEM;
+
+        return 0;
+}
+```
+
+### `struct super_operations`
+
+```C
+static const struct super_operations super_operations = {
+        .statfs = simple_statfs,
+        /* sync_fs */
+        /* {alloc,destroy,dirty,drop,evict}_inode */
+        /* show_{options,devname,path,stats} */
+        /* ... */
+};
+```
+
+### `fs_inode_get()` (1/2)
+
+Creates a new inode.
+
+```C
+struct inode *fs_inode_get(struct super_block *sb, const struct inode *dir,
+               umode_t mode)
+{
+        /* For cache usage: iget_locked(sb, inode_id) */
+        struct inode *inode = new_inode(sb);
+
+        if (!inode)
+            return ERR_PTR(-ENOMEM);
+
+        inode->i_ino = get_next_ino();
+        inode_init_owner(inode, dir, S_IFDIR);
+        /* No address space mapping operations. */
+        inode->i_mapping->a_ops = &empty_aops;
+        inode->i_atime = inode->i_ctime = inode->i_mtime = CURRENT_TIME;
+```
+
+### `fs_inode_get()` (2/2)
+
+```C
+        switch (mode)
+        {
+        default:
+                init_special_inode(inode, mode,  0);
+                break;
+        case S_IFDIR:
+                inode->i_op = &simple_dir_inode_operations;
+                inode->i_fop = &simple_dir_operations;
+                /* directory inodes start off with i_nlink == 2 (for "." entry) */
+                set_nlink(inode, 2);
+                break;
+        case S_IFREG:
+        case S_IFLNK:
+               /* ... */
+                break;
+        }
+
+        return inode;
+}
+```
+
+### Going further
+
+- `fs/ramfs/inode.c` is one of the most simple file system in Linux
+- `fs/libfs.c` contains a wide range of general purpose, default behavior
+   operations
 
 ### FUSE: Filesystem in Userspace
 
