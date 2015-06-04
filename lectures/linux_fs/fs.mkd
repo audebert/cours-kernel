@@ -127,13 +127,16 @@ The filesystem
 For MS_MOVE, The filesystemtype, mountflags, and data arguments are ignored.
 -->
 
-### Limits of the VFS
+### File systems out of the kernel
 
 - Most storage filesytems provide userspace tools to interact with them:
   `mkfs.<filesystem>`, `fsck.<filesystem>`
 
 #### `btrfs`
 
+- A modern file system created by Oracle.
+- Features: RAID0, RAID1, snapshots, subvolumes, quotas, incremental updates,
+  etc.
 - Provides a misc device for advanced interaction: `/dev/btrfs-control`.
 - Userspace tool used to issue commands: `btrfs(8)`.
 
@@ -143,10 +146,10 @@ For MS_MOVE, The filesystemtype, mountflags, and data arguments are ignored.
 
 - Mostly oriented toward traditional Unix filesystems: other filesystems must
   map their internal implementation with the Linux VFS structures.
-- Four main objects:
+- The VFS is composed of four main objects:
 
     - *superblock*, information about a mounted filesystem
-    - *dentry*, information about adirectory entry
+    - *dentry*, information about a directory entry
     - *inode*, information about a specific file on a filesystem
     - *file*, information about an opened file
 
@@ -176,7 +179,7 @@ https://www.kernel.org/doc/Documentation/filesystems/vfs.txt
 ### Why creating a new file system?
 
 - Adding entries to `/proc` is discouraged.
-- A single misc device may not be enough for what you what to do.
+- A single misc device may not be enough for what you want to do.
 - Adding "new syscalls" using `ioctl(2)` is also discouraged.
 
 ### Registering a new (pseudo) filesystem
@@ -186,21 +189,12 @@ https://www.kernel.org/doc/Documentation/filesystems/vfs.txt
 ```C
 static struct file_system_type fs_type = {
         .owner          = THIS_MODULE,
-        .name           = "myfs",
+        .name           = "fs",
         .mount          = fs_mount,
         .kill_sb        = fs_kill_sb,
         .fs_flags       = FS_USERNS_MOUNT,
 };
 
-static int __init init_tue_fs(void)
-{
-        return register_filesystem(&fs_type);
-}
-
-static void __exit exit_tue_fs(void)
-{
-        unregister_filesystem(&fs_type);
-}
 ```
 
 ### `fs_mount()`
@@ -216,13 +210,11 @@ static struct dentry *fs_mount(
                      void *data)
 {
         struct super_block *sb;
-        int r;
 
-        sb = sget(fs_type, NULL, fs_super_set, flags,
-                  domain);
-        r = fs_super_fill(sb);
-        if (r)
-            return r;
+        /* No error handling */
+        sb = sget(fs_type, NULL, set_anon_super, flags,
+                  NULL);
+        fs_super_fill(sb);
 
         return dget(sb->s_root);
 }
@@ -238,6 +230,7 @@ static struct dentry *fs_mount(
                      int flags, const char *dev_name,
                      void *data)
 {
+        /* Better */
         return mount_nodev(fs_type, flags, data,
                            fs_super_fill);
 }
@@ -259,10 +252,9 @@ int fs_super_fill(struct super_block *sb,
         sb->s_blocksize = PAGE_CACHE_SIZE;
         sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
         sb->s_magic = MYFS_SUPER_MAGIC;
-        sb->s_op = &fs_super_sops;
-        sb->s_time_gran = 1;
+        sb->s_op = &super_sops;
 
-        inode = fs_inode_get(sb, NULL);
+        inode = inode_get(sb, NULL);
         sb->s_root = d_make_root(inode);
         if (!sb->s_root)
             return -ENOMEM;
@@ -316,8 +308,7 @@ struct inode *fs_inode_get(struct super_block *sb,
 \small
 
 ```C
-    switch (mode)
-    {
+    switch (mode) {
     default:
             init_special_inode(inode, mode,  0);
             break;
@@ -349,15 +340,18 @@ struct inode *fs_inode_get(struct super_block *sb,
 ### FUSE: Filesystem in Userspace
 
 - A filesystem in which data and metadata are provided by an ordinary userspace
-  process.The filesystem can be accessed normally through the kernel interface.
+  process. The filesystem can be accessed normally through the kernel
+  interface.
 - It consists of a kernel module (`fuse.ko`), a userspace library
-  (`libfuse.so`) and mount utilities (`fusemount`, `mount.fuse`).
+  (`libfuse.so`) and mount utilities (`fusermount`, `mount.fuse`).
 - Binding are available for other languages, eg. python.
 - Projects using FUSE:
 
     - gdrivefs (Google Drive)
     - rar2fs (rar archives)
     - encfs (encrypted files)
+    - ftpfs
+    - sshfs
 
 - http://fuse.sourceforge.net/
 
