@@ -108,8 +108,8 @@ Test your syscall in your init.
 
 See also:
 
-- `Anatomy of a system call <http://lwn.net/Articles/604287/>`_
-- `syscall(signal2) <http://man7.org/linux/man-pages/man2/syscall.2.html>`_
+- [Anatomy of a system call](http://lwn.net/Articles/604287/)
+- [syscall(2)](http://man7.org/linux/man-pages/man2/syscall.2.html)
 
 ### myModuleHello
 
@@ -134,4 +134,4 @@ Steps:
 ### myCrashModule
 
 Write 3 kernel modules. When loaded, each one should crash the kernel in a
-different way.
+different way. Be creative.
