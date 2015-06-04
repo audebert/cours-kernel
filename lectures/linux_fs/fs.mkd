@@ -1,5 +1,5 @@
-% Linux - File systems
-% Rémi Audebert - Pierre Surply
+% Linux - VFS
+% Rémi Audebert (LSE 2016)
 % 2015-06-04
 
 # Introduction
@@ -158,7 +158,8 @@ Very similar to the ext2 filesystem.
 
 ### Caches
 
-Multiple caches help avoiding immediate access to the underlying hardware, or other internal data structures.
+Multiple caches help avoiding immediate access to the underlying hardware, or
+other internal data structures.
 
 - dentry cache (`dcache`): a view of the currently accessed paths.
 - inode caches: if an inode can be uniquely identified by an `int`, make a
@@ -178,7 +179,9 @@ https://www.kernel.org/doc/Documentation/filesystems/vfs.txt
 - A single misc device may not be enough for what you what to do.
 - Adding "new syscalls" using `ioctl(2)` is also discouraged.
 
-### Registering a pseudo filesystem
+### Registering a new (pseudo) filesystem
+
+\small
 
 ```C
 static struct file_system_type fs_type = {
@@ -204,15 +207,19 @@ static void __exit exit_tue_fs(void)
 
 Setups the super block, returns the root `dentry`.
 
+\small
+
 ```C
-static struct dentry *fs_mount(struct file_system_type *fs_type,
+static struct dentry *fs_mount(
+                     struct file_system_type *fs_type,
                      int flags, const char *dev_name,
                      void *data)
 {
         struct super_block *sb;
         int r;
 
-        sb = sget(fs_type, NULL, fs_super_set, flags, domain);
+        sb = sget(fs_type, NULL, fs_super_set, flags,
+                  domain);
         r = fs_super_fill(sb);
         if (r)
             return r;
@@ -223,12 +230,16 @@ static struct dentry *fs_mount(struct file_system_type *fs_type,
 
 ### `fs_mount()` (refactored)
 
+\small
+
 ```C
-static struct dentry *fs_mount(struct file_system_type *fs_type,
+static struct dentry *fs_mount(
+                     struct file_system_type *fs_type,
                      int flags, const char *dev_name,
                      void *data)
 {
-        return mount_nodev(fs_type, flags, data, fs_super_fill);
+        return mount_nodev(fs_type, flags, data,
+                           fs_super_fill);
 }
 ```
 
@@ -236,10 +247,12 @@ static struct dentry *fs_mount(struct file_system_type *fs_type,
 
 Setup the filesystem metadata, create root inode.
 
+\small
+
 ```C
 #define MYFS_SUPER_MAGIC 0x12345678
-
-int fs_super_fill(struct super_block *sb, void *data, int silent)
+int fs_super_fill(struct super_block *sb,
+                  void *data, int silent)
 {
         struct inode *inode;
 
@@ -253,12 +266,15 @@ int fs_super_fill(struct super_block *sb, void *data, int silent)
         sb->s_root = d_make_root(inode);
         if (!sb->s_root)
             return -ENOMEM;
-
         return 0;
 }
 ```
 
 ### `struct super_operations`
+
+File system wide configuration.
+
+\small
 
 ```C
 static const struct super_operations super_operations = {
@@ -274,8 +290,11 @@ static const struct super_operations super_operations = {
 
 Creates a new inode.
 
+\small
+
 ```C
-struct inode *fs_inode_get(struct super_block *sb, const struct inode *dir,
+struct inode *fs_inode_get(struct super_block *sb,
+               const struct inode *dir,
                umode_t mode)
 {
         /* For cache usage: iget_locked(sb, inode_id) */
@@ -288,35 +307,41 @@ struct inode *fs_inode_get(struct super_block *sb, const struct inode *dir,
         inode_init_owner(inode, dir, S_IFDIR);
         /* No address space mapping operations. */
         inode->i_mapping->a_ops = &empty_aops;
-        inode->i_atime = inode->i_ctime = inode->i_mtime = CURRENT_TIME;
+        inode->i_atime = inode->i_ctime = \
+            inode->i_mtime = CURRENT_TIME;
 ```
 
 ### `fs_inode_get()` (2/2)
 
-```C
-        switch (mode)
-        {
-        default:
-                init_special_inode(inode, mode,  0);
-                break;
-        case S_IFDIR:
-                inode->i_op = &simple_dir_inode_operations;
-                inode->i_fop = &simple_dir_operations;
-                /* directory inodes start off with i_nlink == 2 (for "." entry) */
-                set_nlink(inode, 2);
-                break;
-        case S_IFREG:
-        case S_IFLNK:
-               /* ... */
-                break;
-        }
+\small
 
-        return inode;
+```C
+    switch (mode)
+    {
+    default:
+            init_special_inode(inode, mode,  0);
+            break;
+    case S_IFDIR:
+            inode->i_op = &simple_dir_inode_operations;
+            inode->i_fop = &simple_dir_operations;
+            /* directory inodes starts with i_nlink == 2
+             * (for "." entry) */
+            set_nlink(inode, 2);
+            break;
+    case S_IFREG: case S_IFLNK:
+           /* ... */
+            break;
+    }
+
+    return inode;
 }
 ```
 
 ### Going further
 
+- This file system can be mounted, but does not have any useful feature.
+- We must fill all the necessary `{file,inode,dir,symlink}_operations`
+  callbacks in order to make it do something useful.
 - `fs/ramfs/inode.c` is one of the most simple file system in Linux
 - `fs/libfs.c` contains a wide range of general purpose, default behavior
    operations
@@ -338,8 +363,30 @@ struct inode *fs_inode_get(struct super_block *sb, const struct inode *dir,
 
 ### CUSE: Character device in Userspace
 
+- Userspace can create char devices.
+- Simplify driver development.
+- Slow and limited.
 - Based on the fuse kernel code (`fs/fuse/cuse.c`).
-- Userland can create 
+
+# Assignment
+
+### ChiffreFS
+
+Write an overlay filesystem where each byte wrote to a file is rotated by a
+number given on the option string.
+
+Usage:
+
+```bash
+$ insmod chiffrefs.ko
+$ mkdir chiffred clear
+$ mount chiffred clear -t chiffrefs -o n=13
+$ echo -n foobar >clear/test
+$ cat clear/test
+foobar
+$ cat chiffred/test
+sbbone
+```
 
 <!---
 vim: spl=en spell:
