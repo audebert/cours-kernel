@@ -4,7 +4,7 @@ Kernel Programming
 Workshops
 ---------
 
-Seminar 0:
+### Seminar 0
 
 - [Linux Workshop 0](workshop_0_bootstrap.html)
 - Kernel from scratch: make a kernel bootable on an i386 emulator that prints
@@ -22,6 +22,26 @@ Seminar 0:
 		- Debugging
 
 	- For more information, follow the slides from Lecture #1.
+
+### Seminar 1:
+
+#### `chiffrefs`
+
+Write an overlay filesystem where each byte wrote to a file is rotated by a
+number given on the option string.
+
+Usage:
+
+```bash
+$ insmod chiffrefs.ko
+$ mkdir chiffred clear
+$ mount chiffred clear -t chiffrefs -o n=13
+$ echo -n foobar >clear/test
+$ cat clear/test
+foobar
+$ cat chiffred/test
+sbbone
+```
 
 Contact
 -------
