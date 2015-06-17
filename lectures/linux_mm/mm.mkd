@@ -1,0 +1,443 @@
+% Linux - Memory Management
+% Rémi Audebert
+% 2015-06-18
+
+# Userspace view of memory management
+
+### Memory in `/dev/`
+
+#### `/dev/mem`
+
+- Image of the main physical memory
+- Can be used to examine and patch the system
+- Char device, addresses are interpreted as physical memory addresses.
+
+#### `/dev/kmem`
+
+- Image of the kernel virtual memory
+
+#### `/dev/port`
+
+- Image of the I/O ports
+
+### `/proc/iomem`
+
+- Displays memory registered by the kernel.
+- Prevents multiple registration.
+
+```
+$ cat /proc/iomem
+00000000-00000fff : reserved
+00001000-0009f7ff : System RAM
+0009f800-0009ffff : reserved
+000a0000-000bffff : PCI Bus 0000:00
+000c0000-000cf9ff : Video ROM
+...
+```
+
+### `/proc/ioports`
+
+- Displays I/O ports registered by the kernel.
+- Prevents multiple registration.
+
+```
+$ cat /proc/ioports
+0000-0cf7 : PCI Bus 0000:00
+  0000-001f : dma1
+  0020-0021 : pic1
+  0040-0043 : timer0
+  0050-0053 : timer1
+  0060-0060 : keyboard
+  0061-0061 : PNP0800:00
+  0064-0064 : keyboard
+  0070-0071 : rtc0
+  0080-008f : dma page reg
+...
+```
+
+### Advanced features
+
+#### Swap
+
+When the kernel has to free some memory space, it copies pages of memory to a
+preconfigured space on a hard disk. The combined sizes of the physical memory
+and the swap space is the amount of virtual memory available.
+
+#### zram
+
+Virtual memory can be compressed to reduce the in-memory footprint and reduce
+the need for swapping.
+
+<!---
+Even when the cost of RAM is low, zram still offers advantages for low-end
+hardware devices such as embedded devices and netbooks. Such devices usually
+use flash-based storage that has limited lifespan due to its nature, which is
+also used to provide swap space
+
+Google uses zram in Chrome OS and it is also available as an option for Android
+4.4 devices.
+-->
+
+### Out-of-memory killer
+
+When the system is under extreme memory pressure, the OOM killer will try to kill
+a task in order to free up memory.
+
+### Advanced features
+
+#### Kernel same-page merging
+
+A kernel process (`ksmd`) periodically scans those areas of user memory which
+looking for pages of identical content which can be replaced by a single
+write-protected page.
+
+<!---
+The KSM daemon ksmd periodically scans those areas of user memory which
+have been registered with it, looking for pages of identical content which
+can be replaced by a single write-protected page (which is automatically
+copied if a process later wants to update its content).
+
+KSM was originally developed for use with KVM (where it was known as
+Kernel Shared Memory), to fit more virtual machines into physical memory,
+by sharing the data common between them.  But it can be useful to any
+application which generates many instances of the same data.
+-->
+
+#### Overcommit
+
+Overcommit refers to the practice of giving out virtual memory with no
+guarantee that physical storage for it exists.
+
+<!---
+http://www.etalabs.net/overcommit.html
+-->
+
+# Programs in memory
+
+### Memory management requirements
+
+- Linux was created for systems that include a MMU.
+- Linux has limited support for memory mapping when no mmu is present.
+- The µClinux project aims to support those systems, for example
+  microcontrollers (ARM Cortex-M3/4) or softcore CPU (Altera NIOS II).
+
+### Kernel space and user space (32bit)
+
+![Address space split](kernelUserMemorySplit.png)
+
+### Kernel space and user space (64bit)
+
+![Address space split](64bit.eps)
+
+### Address
+
+![Address space isolation](virtualMemoryInProcessSwitch.png)
+
+### Addresses used in a program
+
+- Content of the memory of a program:
+
+    - Executable code: `.text`
+    - Read-only data: `.rodata`
+    - Read-write data: `.rodata`
+    - Libraries
+    - Stack
+    - Heap
+
+- All of these may be shared.
+
+### Virtual memory areas
+
+- A VMA describes a memory area:
+
+     - Address range (start-end)
+     - Access permissions (read/write/xecutable)
+     - Backing store (file, memory)
+     - Access operations (`open`, `close`, `fault`)
+
+### `struct mm_struct`
+
+![VMA in a task](mm_struct.png)
+
+### When are VMA created?
+
+- At program startup.
+- A call to `mmap(2)`
+
+
+### Multiple programs, one address space
+
+\tiny
+
+```
+$ cat /proc/self/maps
+00400000-0040c000 r-xp 00000000 00:11 4666125           /usr/bin/cat
+0060b000-0060c000 r--p 0000b000 00:11 4666125           /usr/bin/cat
+0060c000-0060d000 rw-p 0000c000 00:11 4666125           /usr/bin/cat
+02110000-02131000 rw-p 00000000 00:00 0                 [heap]
+7f5d9c7e9000-7f5d9c982000 r-xp 00000000 00:11 4665706   /usr/lib/libc-2.21.so
+7f5d9c982000-7f5d9cb81000 ---p 00199000 00:11 4665706   /usr/lib/libc-2.21.so
+7f5d9cb81000-7f5d9cb85000 r--p 00198000 00:11 4665706   /usr/lib/libc-2.21.so
+7f5d9cb85000-7f5d9cb87000 rw-p 0019c000 00:11 4665706   /usr/lib/libc-2.21.so
+7f5d9cb87000-7f5d9cb8b000 rw-p 00000000 00:00 0 
+7f5d9cb8b000-7f5d9cbad000 r-xp 00000000 00:11 4665748   /usr/lib/ld-2.21.so
+7f5d9cbc4000-7f5d9cd4d000 r--p 00000000 00:11 430158    /usr/lib/locale/locale-archive
+7f5d9cd4d000-7f5d9cd50000 rw-p 00000000 00:00 0 
+7f5d9cd8a000-7f5d9cdac000 rw-p 00000000 00:00 0 
+7f5d9cdac000-7f5d9cdad000 r--p 00021000 00:11 4665748   /usr/lib/ld-2.21.so
+7f5d9cdad000-7f5d9cdae000 rw-p 00022000 00:11 4665748   /usr/lib/ld-2.21.so
+7f5d9cdae000-7f5d9cdaf000 rw-p 00000000 00:00 0 
+7ffd97de8000-7ffd97e09000 rw-p 00000000 00:00 0         [stack]
+7ffd97e1e000-7ffd97e20000 r--p 00000000 00:00 0         [vvar]
+7ffd97e20000-7ffd97e22000 r-xp 00000000 00:00 0         [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
+```
+
+<!--
+vvar: http://lxr.free-electrons.com/source/arch/x86/include/asm/vvar.h
+-->
+
+### Address space layout randomization
+
+- Linux randomizes the stack, memory mapping segment, and heap by adding
+  offsets to their starting addresses.
+- This will make a class of exploit techniques fail with a quantifiable
+  probability and also allow their detection since failed attempts will most
+  likely crash the attacked task.
+- Configured through `/proc/sys/kernel/randomize_va_space`
+- Three levels of ASLR:
+
+    - 0: No randomization. Everything is static.
+    - 1: Shared libraries, stack, mmap(), VDSO and heap are randomized.
+    - 2: Same as 1, also randomize heap (`brk(2)` start address)
+
+- Build ASLR enabled executables using CFLAGS=`-pie -fpie`
+- `file(1)` will see them as `shared object`
+
+<!---
+-pie is a linker option
+-fpie is a compiler option
+-->
+
+
+### Illustration of full ASLR
+
+\tiny
+
+```
+$ cat /proc/`pidof checksum`/maps
+7f88df585000-7f88df71e000 r-xp 00000000 00:11 4665706   /usr/lib/libc-2.21.so
+7f88df71e000-7f88df91d000 ---p 00199000 00:11 4665706   /usr/lib/libc-2.21.so
+7f88df91d000-7f88df921000 r--p 00198000 00:11 4665706   /usr/lib/libc-2.21.so
+7f88df921000-7f88df923000 rw-p 0019c000 00:11 4665706   /usr/lib/libc-2.21.so
+7f88df923000-7f88df927000 rw-p 00000000 00:00 0 
+7f88df927000-7f88df949000 r-xp 00000000 00:11 4665748   /usr/lib/ld-2.21.so
+7f88dfb48000-7f88dfb49000 r--p 00021000 00:11 4665748   /usr/lib/ld-2.21.so
+7f88dfb49000-7f88dfb4a000 rw-p 00022000 00:11 4665748   /usr/lib/ld-2.21.so
+7f88dfb4a000-7f88dfb4b000 rw-p 00000000 00:00 0 
+7f88dfb4b000-7f88dfb4c000 r-xp 00000000 00:11 5357692   /home/halfr/lse/isa_rom/checksum
+7f88dfcec000-7f88dfcef000 rw-p 00000000 00:00 0 
+7f88dfd4a000-7f88dfd4b000 rw-s 00000000 00:11 4662116   /home/halfr/lse/isa_rom/isa_rom.bin
+7f88dfd4b000-7f88dfd4c000 r--p 00000000 00:11 5357692   /home/halfr/lse/isa_rom/checksum
+7f88dfd4c000-7f88dfd4d000 rw-p 00001000 00:11 5357692   /home/halfr/lse/isa_rom/checksum
+7ffcf901d000-7ffcf903e000 rw-p 00000000 00:00 0         [stack]
+7ffcf91db000-7ffcf91dd000 r--p 00000000 00:00 0         [vvar]
+7ffcf91dd000-7ffcf91df000 r-xp 00000000 00:00 0         [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
+```
+
+### Illustration of full ASLR
+
+\tiny
+
+```
+$ cat /proc/`pidof checksum`/maps
+7f18d0507000-7f18d06a0000 r-xp 00000000 00:11 4665706   /usr/lib/libc-2.21.so
+7f18d06a0000-7f18d089f000 ---p 00199000 00:11 4665706   /usr/lib/libc-2.21.so
+7f18d089f000-7f18d08a3000 r--p 00198000 00:11 4665706   /usr/lib/libc-2.21.so
+7f18d08a3000-7f18d08a5000 rw-p 0019c000 00:11 4665706   /usr/lib/libc-2.21.so
+7f18d08a5000-7f18d08a9000 rw-p 00000000 00:00 0 
+7f18d08a9000-7f18d08cb000 r-xp 00000000 00:11 4665748   /usr/lib/ld-2.21.so
+7f18d0aca000-7f18d0acb000 r--p 00021000 00:11 4665748   /usr/lib/ld-2.21.so
+7f18d0acb000-7f18d0acc000 rw-p 00022000 00:11 4665748   /usr/lib/ld-2.21.so
+7f18d0acc000-7f18d0acd000 rw-p 00000000 00:00 0 
+7f18d0acd000-7f18d0ace000 r-xp 00000000 00:11 5357813   /home/halfr/lse/isa_rom/checksum
+7f18d0c6e000-7f18d0c71000 rw-p 00000000 00:00 0 
+7f18d0ccc000-7f18d0ccd000 rw-s 00000000 00:11 4662116   /home/halfr/lse/isa_rom/isa_rom.bin
+7f18d0ccd000-7f18d0cce000 r--p 00000000 00:11 5357813   /home/halfr/lse/isa_rom/checksum
+7f18d0cce000-7f18d0ccf000 rw-p 00001000 00:11 5357813   /home/halfr/lse/isa_rom/checksum
+7ffcb3240000-7ffcb3261000 rw-p 00000000 00:00 0         [stack]
+7ffcb3264000-7ffcb3266000 r--p 00000000 00:00 0         [vvar]
+7ffcb3266000-7ffcb3268000 r-xp 00000000 00:00 0         [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
+```
+
+### Mapped files
+
+qwer
+
+#### Copy on write (COW)
+
+- 
+
+### References
+
+- http://duartes.org/gustavo/blog/post/anatomy-of-a-program-in-memory/
+- http://duartes.org/gustavo/blog/post/how-the-kernel-manages-your-memory/
+
+# Low-level memory management
+
+### Pages in Linux
+
+- Linux uses generally 4k page size.
+- Bigger page sizes (2M, 4M and 1G) are supported in Linux through the Hube
+  Page Table feature.
+- One `struct page` for every physical page.
+
+
+<!---
+include/linux/mm_types.h: Note that we have no way to track which tasks are
+using a page,  though if it is a pagecache page, rmap structures can tell us
+who is mapping it.
+-->
+
+###  Zones
+
+- Group pages by hardware features:
+
+    - DMA accessible
+    - NUMA node
+
+- Memory allocations specify zone requirements.
+
+### Typical zones
+
+- `ZONE_DMA`: Addressable with 24bits
+- `ZONE_DMA32`: Addressable with 32bits
+- `ZONE_NORMAL`: Usual memory
+- `ZONE_HIGHMEM`: Not directly addressable (not an issue for 64bit systems)
+
+<!---
+https://unix.stackexchange.com/questions/32083/is-highmem-relevant-in-64-bit-linux-if-not-why
+
+From Documentation/vm/highmem.txt:
+
+    High memory (highmem) is used when the size of physical memory approaches
+or exceeds the maximum size of virtual memory. At that point it becomes
+impossible for the kernel to keep all of the available physical memory mapped
+at all times. This means the kernel needs to start using temporary mappings of
+the pieces of physical memory that it wants to access.
+
+For 32bit systems, the maximum size of virtual memory is 232 i.e. 4Gb. That
+limit is reached pretty fast nowadays, so highmem is a big concern for 32bit
+systems with a lot of RAM.
+
+For 64bit systems, the theoretical maximum virtual memory size is 264, i.e.
+18446744073709551616 bytes (16.8 million terabytes). That is way beyond what
+you can stuff into a computer today. So highmem is not an issue on 64bit
+systems.
+-->
+
+### `struct mm_struct`
+
+- The core process VM data structure.
+- Contains:
+
+    - Page table pointer
+    - VMA list
+    - Memory usage stats
+    - AIO context info
+    - OOM killer information
+
+### `/proc/buddyinfo`
+
+- Displays memory fragmentation by NUMA node and memory zone.
+- Each zone is divided into power of 2 (called the order) page sized chunks by
+  the buddy allocator.
+
+```
+$ cat /proc/buddyinfo
+Node 0, zone      DMA      1      1      0      1      1      1      1      0      1      1      3
+Node 0, zone    DMA32   7275   1812    512    213    204    109     27      0      0      0      0
+Node 0, zone   Normal  20722   6224    701    136      4      0      0      0      0      0      0
+```
+
+<!---
+http://andorian.blogspot.fr/2014/03/making-sense-of-procbuddyinfo.html
+-->
+
+# Allocating memory in the kernel
+
+### Allocators
+
+- Various different parts of the Linux kernel allocate memory, under different
+  circumstances. Most memory allocations happen on behalf of userspace
+  programs.
+
+- Early allocators, used when the memory subsystem is not fully initialized:
+
+    - `mm/bootmem.c`
+    - `mm/memblock.c`
+
+- Page allocation:
+
+    - `alloc_page()`
+    - `get_free_page()`
+
+- Heap allocators:
+
+    - SLOB: Simple List Of Blocks
+    - SLAB: A caching, fast and space-efficient allocator
+    - SLUB: "the unqueued slab allocator", default since 2.6.23
+
+<!---
+https://events.linuxfoundation.org/sites/events/files/slides/slaballocators.pdf
+
+Slab allocation was first introduced in the Solaris 5.4 kernel by Jeff
+Bonwick.[1] It is now widely used by many Unix and Unix-like operating systems
+including FreeBSD[2] and Linux.[3]
+
+https://en.wikipedia.org/wiki/Slab_allocation
+
+The slab allocator maintains a number of queues of objects; these queues can
+make allocation fast but they also add quite a bit of complexity. Beyond that,
+the storage overhead tends to grow with the size of the system.
+
+SLUB allocator, a drop-in replacement for the slab code
+
+https://lwn.net/Articles/229984/
+-->
+
+### GPF flags
+
+- `GFP_KERNEL`: Normal kernel allocations, may sleep.
+- `GFP_ATOMIC`: Allocate memory from interrupt handlers, or outside of a
+  process context. May not sleep.
+- `GFP_USER`: Allocate memory for user-space, may sleep.
+- `GFP_NOIO`, `GFP_NOFS`: Same as `GFP_KERNEL`, but restrict what the kernel
+  can do to satisfy the request.
+- More flags can be used to customize allocation: `__GFP_DMA`, `__GFP_HIGHMEM`,
+  `__GFP_COLD`, `__GFP_NOWARN`, `__GFP_HIGH`, `__GFP_REPEAT`, `__GFP_NOFAIL`,
+  `__GFP_NORETRY`.
+
+<!---
+GFP_KERNEL: A function that allocates memory using GFP_KERNEL must be reentrant and cannot
+be running in atmoic context. While a process sleeps, the kernel takes proper
+action to locate some free memory, either by flushing buffeters to disk or by
+swapping out memory from a user process.
+-->
+
+### Caches and mempool
+
+- `kmem_cache_create()` can be used to create a cache for allocating object of
+  the same size.
+
+### References
+
+- 
+- Linux Device Drivers Chapter 8: Allocating Memory
+- Linux Device Drivers Chapter 15: Memory Mapping and DMA
+
+<!---
+vim: spl=en spell:
+-->
