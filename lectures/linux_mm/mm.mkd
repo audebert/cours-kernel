@@ -129,7 +129,7 @@ http://www.etalabs.net/overcommit.html
 
 ![Address space split](64bit.eps)
 
-### Address
+### One address space, multiple processes
 
 ![Address space isolation](virtualMemoryInProcessSwitch.png)
 
@@ -158,11 +158,6 @@ http://www.etalabs.net/overcommit.html
 ### `struct mm_struct`
 
 ![VMA in a task](mm_struct.png)
-
-### When are VMA created?
-
-- At program startup.
-- A call to `mmap(2)`
 
 ### Multiple programs, one address space
 
@@ -196,6 +191,12 @@ ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
 vvar: http://lxr.free-electrons.com/source/arch/x86/include/asm/vvar.h
 -->
 
+
+### When are VMA created?
+
+- At program startup.
+- A call to `mmap(2)`
+
 ### Address space layout randomization
 
 - Linux randomizes the stack, memory mapping segment, and heap by adding
@@ -210,8 +211,7 @@ vvar: http://lxr.free-electrons.com/source/arch/x86/include/asm/vvar.h
     - 1: Shared libraries, stack, mmap(), VDSO and heap are randomized.
     - 2: Same as 1, also randomize heap (`brk(2)` start address)
 
-- Build ASLR enabled executables using CFLAGS=`-pie -fpie`
-- `file(1)` will see them as `shared object`
+- Build ASLR enabled executables using `CFLAGS=-pie -fpie`
 
 <!---
 -pie is a linker option
@@ -275,11 +275,15 @@ ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
 
 ```bash
 $ file cat
-/usr/bin/cat: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically
-linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32,
+/usr/bin/cat: ELF 64-bit LSB executable, x86-64,
+version 1 (SYSV), dynamically linked,
+interpreter /lib64/ld-linux-x86-64.so.2,
+for GNU/Linux 2.6.32,
 $ file checksum
-checksum: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically
-linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32,
+checksum: ELF 64-bit LSB shared object, x86-64,
+version 1 (SYSV), dynamically linked,
+interpreter /lib64/ld-linux-x86-64.so.2,
+for GNU/Linux 2.6.32,
 ```
 
 ### Memory mapping
@@ -293,6 +297,8 @@ linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32,
   data. They are zero-filled.
 
 ### File memory mapping: example
+
+\footnotesize
 
 ```c
 int main(int ac, char **av)
@@ -427,7 +433,7 @@ systems.
 
 ### `struct mm_struct`
 
-\ ![](memoryDescriptorAndMemoryAreas.png)
+![A process and its mapping](memoryDescriptorAndMemoryAreas.png)
 
 # Allocating memory in the kernel
 
@@ -471,6 +477,8 @@ https://lwn.net/Articles/229984/
 -->
 
 ### Manipulating pages
+
+\small
 
 ```c
 /* Allocate a single page and return a struct page. */
@@ -528,7 +536,7 @@ http://andorian.blogspot.fr/2014/03/making-sense-of-procbuddyinfo.html
     - Some operations, such as DMA, accesses the memory directly and do not use
       virtual addressses.
 
-- This is the preferred way to allocate memory in the Linux kernel
+- This is the preferred way to allocate memory in the Linux kernel.
 
 ### `vmalloc()`
 
@@ -549,6 +557,8 @@ https://www.kernel.org/doc/gorman/html/understand/understand010.html
 
 ### Slab basic api
 
+\small
+
 ```c
 struct kmem_cache *
 kmem_cache_create(const char *name,
@@ -557,16 +567,17 @@ kmem_cache_create(const char *name,
                   unsigned long flags,
                   void (*ctor)(void *));
 
-void *kmem_cache_alloc(struct kmem_cache *c, gfp_t gfpflags);
+void *kmem_cache_alloc(struct kmem_cache *c,
+                       gfp_t gfpflags);
 void kmem_cache_free(struct kmem_cache *c, void *addr);
 void kmem_cache_destroy(struct kmem_cache *c);
 ```
 
 ### References
 
-- http://duartes.org/gustavo/blog/post/anatomy-of-a-program-in-memory/
-- http://duartes.org/gustavo/blog/post/how-the-kernel-manages-your-memory/
-- https://events.linuxfoundation.org/sites/events/files/slides/slaballocators.pdf
+- <http://duartes.org/gustavo/blog/post/anatomy-of-a-program-in-memory/>
+- <http://duartes.org/gustavo/blog/post/how-the-kernel-manages-your-memory/>
+- <https://events.linuxfoundation.org/sites/events/files/slides/slaballocators.pdf>
 - Linux Device Drivers Chapter 8: Allocating Memory
 - Linux Device Drivers Chapter 15: Memory Mapping and DMA
 - Understanding the Linux Kernel Chapter 9: Process Address Space
