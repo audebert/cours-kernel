@@ -1,0 +1,27 @@
+% Linux - Processes
+% Rémi Audebert
+% 2015-06-19
+
+# Processes 
+
+### Init
+
+- 
+
+### PID Namespace
+
+### The process 
+
+- A process can be identified by its PID.
+- The PID is an index in the `pid_map` array of `struct pid_namespace`
+
+- The maximum PID value can be seen and edited in `/proc/sys/kernel/pid_max`
+- Depending on the configuration of the kernel the maximum value can 
+
+### References
+
+- Understanding the Linux Kernel, Chapter 3: Processes
+
+<!---
+vim: spl=en spell:
+-->
