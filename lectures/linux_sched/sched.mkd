@@ -1,0 +1,119 @@
+% Linux - Scheduling
+% Rémi Audebert
+% 2015-06-19
+
+# Scheduling
+
+### Introduction
+
+- Linux is a time sharing OS.
+- Multiple processes are executed "simultaneously".
+- This is achieved by switching from one process to another in a very short
+  time frame.
+- Problems:
+
+    - When to switch?
+    - Which is the next process?
+
+### Scheduling needs
+
+- Fast process response time
+- Good throughput for background jobs
+- Avoid process starvation
+- Respect of the processes priorities
+
+### Time sharing
+
+- A CPU can only run one process at a given instant.
+- CPU time is divided into time slices, or *quanta*.
+- If a currently running process is not terminated when its *quantum* expires,
+  a process switch may take place.
+- Time sharing relies on timer interrupts and is transparent to processes.
+
+### Scheduling policy
+
+- Processes are ranked and sorted by their priorities and current activity.
+- Processes ranks are dynamic, the scheduler keeps tracks of what processes are
+  doing and adjust their priorities.
+- Two classes of processes:
+
+    - I/O-bound: spend must time waiting for devices
+    - CPU-bound: require only CPU time
+
+### Linux schedulers history
+
+- O(1)
+- Rotating Staircase Deadline
+- Completely Fair Scheduler (CFS), introduced in 2.6.23, default
+- Brain Fuck Scheduler (BFS), simpler alternative to CFS
+
+### Scheduler classes
+
+Different processes can have different scheduler classes:
+
+- `SCHED_NORMAL`: CFS
+- `SCHED_FIFO`: First-in-first-out
+- `SCHED_RR`: Realtime round-robin
+- `SCHED_DEADLINE`: Earliest deadline first
+
+Each scheduling class will be executed one after the other, in their priority
+order.
+
+<!---
+Earliest deadline first (EDF) or least time to go is a dynamic scheduling
+algorithm used in real-time operating systems to place processes in a priority
+queue. Whenever a scheduling event occurs (task finishes, new task released,
+etc.) the queue will be searched for the process closest to its deadline. This
+process is the next to be scheduled for execution.
+-->
+
+### Periodic ticks
+
+- Each running CPU is interrupted `HZ` time each second by the periodic timer.
+  `HZ` value is between 100 and 1000. See `zgrep CONFIG_HZ /proc/config.gz`.
+- Each tick, Linux may perform:
+
+    - Time keeping
+    - Scheduling
+    - Process statistics (`getrusage()`)
+    - Deferred free (RCU, lockless operations)
+    - Deferred processing (tasklets, work queues)
+    - OS maintenance
+
+### A tickless kernel
+
+- Problems with ticking systems:
+
+    - Periodic ticking is a performance issue.
+    - High power usage.
+
+- Solutions:
+
+    - `CONFIG_NO_HZ_IDLE`: ticking is disabled when the CPU is idle (default
+      for most distributions)
+    - `CONFIG_NO_HZ_FULL`: no ticking at all (except for boot CPU)
+
+<!---
+http://lwn.net/Articles/549580/
+https://events.linuxfoundation.org/sites/events/files/slides/LinuxCon%20-%20TicklessKernel_revc.pdf
+-->
+
+### Syscalls related to scheduling
+
+- `nice()`: Change the static priority of a process
+- `getpriority()`, `setpriority()`: get/set nice value of a process, process group or user
+- `sched_yield()`: Relinquish the processor voluntarily without blocking
+
+# Timers
+
+### 
+
+### References
+
+- https://www.cs.columbia.edu/~smb/classes/s06-4118/l13.pdf
+- https://events.linuxfoundation.org/sites/events/files/slides/LinuxCon%20-%20TicklessKernel_revc.pdf
+- http://criticalblue.com/news/wp-content/uploads/2013/12/linux_scheduler_notes_final.pdf
+
+<!---
+vim: spl=en spell:
+-->
