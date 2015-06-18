@@ -597,6 +597,7 @@ void kmem_cache_destroy(struct kmem_cache *c);
 - <https://events.linuxfoundation.org/sites/events/files/slides/slaballocators.pdf>
 - <http://www.makelinux.net/books/lkd2/ch14lev1sec2>
 - <http://0xax.gitbooks.io/linux-insides/content/Theory/Paging.html>
+- <https://lse.epita.fr/data/2011-lse-lightning-talks/slab.pdf>
 - Linux Device Drivers Chapter 8: Allocating Memory
 - Linux Device Drivers Chapter 15: Memory Mapping and DMA
 - Understanding the Linux Kernel Chapter 9: Process Address Space
