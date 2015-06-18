@@ -22,7 +22,7 @@
 
 ### `/proc/iomem`
 
-- Displays memory registered by the kernel.
+- Displays memory registered by the kernel using `request_mem_region()`.
 - Prevents multiple registration.
 
 ```
@@ -37,7 +37,7 @@ $ cat /proc/iomem
 
 ### `/proc/ioports`
 
-- Displays I/O ports registered by the kernel.
+- Displays I/O ports registered by the kernel using `request_region()`.
 - Prevents multiple registration.
 
 ```
@@ -310,7 +310,8 @@ int main(int ac, char **av)
 
     fd = open(av[1], O_RDWR);
     r = fstat(fd, &stat);
-    p = mmap(NULL, stat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    p = mmap(NULL, stat.st_size, PROT_READ | PROT_WRITE,
+             MAP_SHARED, fd, 0);
 
     for (unsigned i = 0; i < stat.st_size - 1; ++i)
         sum += p[i];
@@ -338,12 +339,15 @@ int main(int ac, char **av)
 ### Heap management
 
 - Underlying question: what does `malloc(3)` do?
+- For the glibc `malloc`:
 
     1. Try to reduce memory fragmentation, reuse already allocated blocks.
     2. Try to get the long lived large allocations to use `mmap(2)`.
     3. Really large allocations should always use `mmap(2)`.
     4. Transient allocations should use `brk(2)` to avoid forcing the kernel
        having to zero memory over and over again.
+
+- See <https://sourceware.org/git/?p=glibc.git;a=blob;f=malloc/malloc.c>
 
 ### Page faults
 
@@ -410,11 +414,11 @@ impossible for the kernel to keep all of the available physical memory mapped
 at all times. This means the kernel needs to start using temporary mappings of
 the pieces of physical memory that it wants to access.
 
-For 32bit systems, the maximum size of virtual memory is 232 i.e. 4Gb. That
+For 32bit systems, the maximum size of virtual memory is 2^32 i.e. 4Gb. That
 limit is reached pretty fast nowadays, so highmem is a big concern for 32bit
 systems with a lot of RAM.
 
-For 64bit systems, the theoretical maximum virtual memory size is 264, i.e.
+For 64bit systems, the theoretical maximum virtual memory size is 2^64, i.e.
 18446744073709551616 bytes (16.8 million terabytes). That is way beyond what
 you can stuff into a computer today. So highmem is not an issue on 64bit
 systems.
@@ -481,16 +485,29 @@ https://lwn.net/Articles/229984/
 \small
 
 ```c
-/* Allocate a single page and return a struct page. */
+/* Allocate a single page, return the struct page. */
 struct page *alloc_page(unsigned int gfp_mask);
-/* Allocate 2^order number of pages and returns a struct page. */
-struct page *alloc_pages(unsigned int gfp_mask, unsigned int order);
-/* Allocate a single page and return a virtual address. */
+/* Allocate 2^order number of pages. */
+struct page *alloc_pages(unsigned int gfp_mask,
+                         unsigned int order);
+/* Allocate a single page, return a virtual address. */
 unsigned long __get_free_page(unsigned int gfp_mask);
-/* Allocate 2^order pages and return a virtual address. */
-unsigned long __get_free_pages(unsigned int gfp_mask, unsigned int order);
+/* Allocate 2^order pages, return a virtual address. */
+unsigned long __get_free_pages(unsigned int gfp_mask,
+                               unsigned int order);
 /* Get a virtual address from a page. */
 void *page_address(const struct page *page);
+```
+
+### Manipulating pages 2
+
+\small
+
+```c
+/* Insert single page into user vma. */
+int vm_insert_page (struct vm_area_struct *vma,
+                    unsigned long addr,
+                    struct page *page);
 ```
 
 ### GFP flags
@@ -578,6 +595,8 @@ void kmem_cache_destroy(struct kmem_cache *c);
 - <http://duartes.org/gustavo/blog/post/anatomy-of-a-program-in-memory/>
 - <http://duartes.org/gustavo/blog/post/how-the-kernel-manages-your-memory/>
 - <https://events.linuxfoundation.org/sites/events/files/slides/slaballocators.pdf>
+- <http://www.makelinux.net/books/lkd2/ch14lev1sec2>
+- <http://0xax.gitbooks.io/linux-insides/content/Theory/Paging.html>
 - Linux Device Drivers Chapter 8: Allocating Memory
 - Linux Device Drivers Chapter 15: Memory Mapping and DMA
 - Understanding the Linux Kernel Chapter 9: Process Address Space
