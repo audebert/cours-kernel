@@ -67,6 +67,12 @@ etc.) the queue will be searched for the process closest to its deadline. This
 process is the next to be scheduled for execution.
 -->
 
+### Realtime scheduling
+
+- The standard Linux kernel only meets soft real-time requirements.
+- No guarantees for hard timing deadlines.
+- The `-rt` patchset aims to provide a 
+
 ### Periodic ticks
 
 - Each running CPU is interrupted `HZ` time each second by the periodic timer.
