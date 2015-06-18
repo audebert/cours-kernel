@@ -139,7 +139,7 @@ http://www.etalabs.net/overcommit.html
 
     - Executable code: `.text`
     - Read-only data: `.rodata`
-    - Read-write data: `.rodata`
+    - Read-write data: `.data`
     - Libraries
     - Stack
     - Heap
@@ -373,12 +373,12 @@ int main(int ac, char **av)
 ### Pages in Linux
 
 - Linux uses generally 4k page size.
-- Bigger page sizes (2M, 4M and 1G) are supported in Linux through the Hube
+- Bigger page sizes (2M, 4M and 1G) are supported in Linux through the Huge
   Page Table feature.
 - One `struct page` for every physical page:
 
     - Keeps track of usage count
-    - Internal data used by allocators
+    - Contains internal data used page allocator
 
 
 <!---
@@ -389,14 +389,14 @@ who is mapping it.
 
 ### Zones
 
-- Group pages by hardware features:
+- Zones are contiguous groups of pages defined by hardware requirements:
 
     - DMA accessible
     - NUMA node
 
 - Memory allocations specify zone requirements.
 
-### Typical zones
+#### Typical zones
 
 - `ZONE_DMA`: Addressable with 24bits (16MB)
 - `ZONE_DMA32`: Addressable with 32bits (4GB)
@@ -427,13 +427,12 @@ systems.
 ### `struct mm_struct`
 
 - The core process VM data structure.
-- Contains:
+- It contains:
 
-    - Page table pointer
+    - Page table directory pointer
     - VMA list
     - Memory usage stats
     - Asynchronous I/O context info
-    - OOM killer information
 
 ### `struct mm_struct`
 
