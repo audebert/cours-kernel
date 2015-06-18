@@ -55,7 +55,7 @@ $ cat /proc/ioports
 ...
 ```
 
-### Advanced features
+### Linux memory features
 
 #### Swap
 
@@ -164,7 +164,6 @@ http://www.etalabs.net/overcommit.html
 - At program startup.
 - A call to `mmap(2)`
 
-
 ### Multiple programs, one address space
 
 \tiny
@@ -272,18 +271,92 @@ $ cat /proc/`pidof checksum`/maps
 ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
 ```
 
-### Mapped files
+### Identifying ASLR executables
 
-qwer
+```bash
+$ file cat
+/usr/bin/cat: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically
+linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32,
+$ file checksum
+checksum: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically
+linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.32,
+```
+
+### Memory mapping
+
+- Memory mapping is a convenient and high-performance way to do file I/O.
+- They are created via a call to `mmap(2)`.
+- Memory is read from the backing storage on-the-fly.
+- Backing storage is updated automatically or an update can be forced using
+  `msync(2)`.
+- Anonymous memory mapping not map any file and can be used instead for program
+  data. They are zero-filled.
+
+### File memory mapping: example
+
+```c
+int main(int ac, char **av)
+{
+    int r, fd;
+    struct stat stat;
+    unsigned char *p;
+    unsigned char sum = 0;
+
+    fd = open(av[1], O_RDWR);
+    r = fstat(fd, &stat);
+    p = mmap(NULL, stat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    for (unsigned i = 0; i < stat.st_size - 1; ++i)
+        sum += p[i];
+    p[stat.st_size-1] = sum;
+
+    r = munmap(p, stat.st_size);
+    r = close(fd);
+    return EXIT_SUCCESS;
+}
+```
+
+### Stack management
+
+- It is possible to exhaust the area mapping the stack by pushing more data
+  than it can fit.
+- This triggers a page fault that is handled in Linux by `expand_stack()`,
+  which in turn calls `acct_stack_growth()` to check whether it's appropriate
+  to grow the stack.
+- If the stack size is below `RLIMIT_STACK` (usually 8MB, see `ulimit -s`),
+  then normally the stack grows and the program continues merrily, unaware of
+  what just happened.
+- If the maximum stack size has been reached, we have a stack overflow and the
+  program receives a Segmentation Fault.
+
+### Heap management
+
+- Underlying question: what does `malloc(3)` do?
+
+    1. Try to reduce memory fragmentation, reuse already allocated blocks.
+    2. Try to get the long lived large allocations to use `mmap(2)`.
+    3. Really large allocations should always use `mmap(2)`.
+    4. Transient allocations should use `brk(2)` to avoid forcing the kernel
+       having to zero memory over and over again.
+
+### Page faults
+
+#### Hard fault
+
+- When a page is not present, for example when it is swapped out or not yet
+  read.
+- This requires I/O access and thus slow.
+
+#### Soft fault
+
+- On new anonymous pages access, requiring zero-fill.
+- When a page is already in memory but not in the process page table (shared
+  memory).
 
 #### Copy on write (COW)
 
-- 
-
-### References
-
-- http://duartes.org/gustavo/blog/post/anatomy-of-a-program-in-memory/
-- http://duartes.org/gustavo/blog/post/how-the-kernel-manages-your-memory/
+- A page can that is supposed to be RW can be shared between multiple users as
+  RO until one of the user performs a write operation, triggering a copy.
 
 # Low-level memory management
 
@@ -292,7 +365,10 @@ qwer
 - Linux uses generally 4k page size.
 - Bigger page sizes (2M, 4M and 1G) are supported in Linux through the Hube
   Page Table feature.
-- One `struct page` for every physical page.
+- One `struct page` for every physical page:
+
+    - Keeps track of usage count
+    - Internal data used by allocators
 
 
 <!---
@@ -301,7 +377,7 @@ using a page,  though if it is a pagecache page, rmap structures can tell us
 who is mapping it.
 -->
 
-###  Zones
+### Zones
 
 - Group pages by hardware features:
 
@@ -312,8 +388,8 @@ who is mapping it.
 
 ### Typical zones
 
-- `ZONE_DMA`: Addressable with 24bits
-- `ZONE_DMA32`: Addressable with 32bits
+- `ZONE_DMA`: Addressable with 24bits (16MB)
+- `ZONE_DMA32`: Addressable with 32bits (4GB)
 - `ZONE_NORMAL`: Usual memory
 - `ZONE_HIGHMEM`: Not directly addressable (not an issue for 64bit systems)
 
@@ -346,25 +422,12 @@ systems.
     - Page table pointer
     - VMA list
     - Memory usage stats
-    - AIO context info
+    - Asynchronous I/O context info
     - OOM killer information
 
-### `/proc/buddyinfo`
+### `struct mm_struct`
 
-- Displays memory fragmentation by NUMA node and memory zone.
-- Each zone is divided into power of 2 (called the order) page sized chunks by
-  the buddy allocator.
-
-```
-$ cat /proc/buddyinfo
-Node 0, zone      DMA      1      1      0      1      1      1      1      0      1      1      3
-Node 0, zone    DMA32   7275   1812    512    213    204    109     27      0      0      0      0
-Node 0, zone   Normal  20722   6224    701    136      4      0      0      0      0      0      0
-```
-
-<!---
-http://andorian.blogspot.fr/2014/03/making-sense-of-procbuddyinfo.html
--->
+\ ![](memoryDescriptorAndMemoryAreas.png)
 
 # Allocating memory in the kernel
 
@@ -381,10 +444,9 @@ http://andorian.blogspot.fr/2014/03/making-sense-of-procbuddyinfo.html
 
 - Page allocation:
 
-    - `alloc_page()`
-    - `get_free_page()`
+    - `alloc_pages()`
 
-- Heap allocators:
+- Contiguous memory allocators:
 
     - SLOB: Simple List Of Blocks
     - SLAB: A caching, fast and space-efficient allocator
@@ -408,7 +470,22 @@ SLUB allocator, a drop-in replacement for the slab code
 https://lwn.net/Articles/229984/
 -->
 
-### GPF flags
+### Manipulating pages
+
+```c
+/* Allocate a single page and return a struct page. */
+struct page *alloc_page(unsigned int gfp_mask);
+/* Allocate 2^order number of pages and returns a struct page. */
+struct page *alloc_pages(unsigned int gfp_mask, unsigned int order);
+/* Allocate a single page and return a virtual address. */
+unsigned long __get_free_page(unsigned int gfp_mask);
+/* Allocate 2^order pages and return a virtual address. */
+unsigned long __get_free_pages(unsigned int gfp_mask, unsigned int order);
+/* Get a virtual address from a page. */
+void *page_address(const struct page *page);
+```
+
+### GFP flags
 
 - `GFP_KERNEL`: Normal kernel allocations, may sleep.
 - `GFP_ATOMIC`: Allocate memory from interrupt handlers, or outside of a
@@ -427,16 +504,72 @@ action to locate some free memory, either by flushing buffeters to disk or by
 swapping out memory from a user process.
 -->
 
-### Caches and mempool
+### `/proc/buddyinfo`
 
-- `kmem_cache_create()` can be used to create a cache for allocating object of
-  the same size.
+- Displays memory fragmentation by NUMA node and memory zone.
+- Each zone is divided into power of 2 (called the order) page sized chunks by
+  the physical page buddy allocator.
+
+```
+$ cat /proc/buddyinfo
+Node 0, zone      DMA      1      1      0      1      1      1      1      0      1      1      3
+Node 0, zone    DMA32   7275   1812    512    213    204    109     27      0      0      0      0
+Node 0, zone   Normal  20722   6224    701    136      4      0      0      0      0      0      0
+```
+
+<!---
+http://andorian.blogspot.fr/2014/03/making-sense-of-procbuddyinfo.html
+-->
+
+### `kmalloc()`
+
+- Allocates physically contiguous memory zone.
+
+    - Some operations, such as DMA, accesses the memory directly and do not use
+      virtual addressses.
+
+- This is the preferred way to allocate memory in the Linux kernel
+
+### `vmalloc()`
+
+- Allocates non-contiguous memory.
+- Used for large allocations (eg. modules).
+
+<!---
+https://www.kernel.org/doc/gorman/html/understand/understand010.html
+-->
+
+### Slab: object caching
+
+- Group objects into caches.
+- Aware of the constructor of theses objects.
+- Tries to maximise CPU cache usage.
+- A group of general caches exist for `kmalloc` allocations.
+- Runtime statistics in `/proc/slabinfo`
+
+### Slab basic api
+
+```c
+struct kmem_cache *
+kmem_cache_create(const char *name,
+                  size_t size,
+                  size_t align,
+                  unsigned long flags,
+                  void (*ctor)(void *));
+
+void *kmem_cache_alloc(struct kmem_cache *c, gfp_t gfpflags);
+void kmem_cache_free(struct kmem_cache *c, void *addr);
+void kmem_cache_destroy(struct kmem_cache *c);
+```
 
 ### References
 
-- 
+- http://duartes.org/gustavo/blog/post/anatomy-of-a-program-in-memory/
+- http://duartes.org/gustavo/blog/post/how-the-kernel-manages-your-memory/
+- https://events.linuxfoundation.org/sites/events/files/slides/slaballocators.pdf
 - Linux Device Drivers Chapter 8: Allocating Memory
 - Linux Device Drivers Chapter 15: Memory Mapping and DMA
+- Understanding the Linux Kernel Chapter 9: Process Address Space
 
 <!---
 vim: spl=en spell:
