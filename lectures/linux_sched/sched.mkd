@@ -42,19 +42,32 @@
 
 ### Linux schedulers history
 
-- O(1)
-- Rotating Staircase Deadline
-- Completely Fair Scheduler (CFS), introduced in 2.6.23, default
-- Brain Fuck Scheduler (BFS), simpler alternative to CFS
+- O(1), very complex and difficult to model
+- Rotating Staircase (2004)
+- Rotating Staircase Deadline (2007)
+- Completely Fair Scheduler (CFS), introduced in 2.6.23, based on RSDL, this is
+now the default scheduler
+- Brain Fuck Scheduler (2009), simpler alternative to CFS
+
+<!---
+Con Kolivas
+-->
 
 ### Scheduler classes
 
 Different processes can have different scheduler classes:
 
-- `SCHED_NORMAL`: CFS
-- `SCHED_FIFO`: First-in-first-out
-- `SCHED_RR`: Realtime round-robin
-- `SCHED_DEADLINE`: Earliest deadline first
+- Normal (non-real-time):
+
+    - `SCHED_OTHER`: round-robin time-sharing
+    - `SCHED_BATCH`: for "background" jobs
+    - `SCHED_IDLE`: for *very* low priority background jobs
+
+- Real-time:
+
+    - `SCHED_FIFO`: First-in-first-out
+    - `SCHED_RR`: Realtime round-robin
+    - `SCHED_DEADLINE`: Earliest deadline first
 
 Each scheduling class will be executed one after the other, in their priority
 order.
@@ -71,7 +84,22 @@ process is the next to be scheduled for execution.
 
 - The standard Linux kernel only meets soft real-time requirements.
 - No guarantees for hard timing deadlines.
-- The `-rt` patchset aims to provide a 
+- The `-rt` patchset aims to provide deterministic latencies
+- Xenomai is an exokernel, cooperating with Linux to provide hard real-time
+  primitives accessible from kernel modules integrating into the Real-Time
+  Driver Model.
+
+### Symmetric multiprocessing (SMP)
+
+- Two or more identical processors connected to a single, shared main memory.
+- Each CPU has a different Linux instance.
+
+#### Processor affinity (or pinning)
+
+- Each task has a bitmask (`on_cpu` field of `struct task_struct`), saying
+  which CPU it can run on.
+- Manually pinning tasks to CPU can make a big difference for high
+  interactivity multithreaded tasks such as games.
 
 ### Periodic ticks
 
@@ -85,6 +113,8 @@ process is the next to be scheduled for execution.
     - Deferred free (RCU, lockless operations)
     - Deferred processing (tasklets, work queues)
     - OS maintenance
+
+- Each tick, `scheduler_tick()` is called.
 
 ### A tickless kernel
 
@@ -106,19 +136,69 @@ https://events.linuxfoundation.org/sites/events/files/slides/LinuxCon%20-%20Tick
 
 ### Syscalls related to scheduling
 
-- `nice()`: Change the static priority of a process
-- `getpriority()`, `setpriority()`: get/set nice value of a process, process group or user
-- `sched_yield()`: Relinquish the processor voluntarily without blocking
+- `nice()`: Change the static priority of a process.
+- `setpriority()`, `getpriority()`: Get/Set nice value of a process, process
+  group or user.
+- `sched_setscheduler()`, `sched_getscheduler()`: Get/Set scheduler for a
+  specific thread.
+- `sched_setattr()`, `sched_getattr()`: Get/Set the scheduling policy and
+  parameters of a specified thread.
+- `sched_yield()`: Relinquish the processor voluntarily without blocking.
 
-# Timers
+### Kernel threads
 
-### 
+- They share the same virtual address space, just like threads in a process.
+- The are low overhead and easy to use.
+- Scheduled as all other tasks
+- PID 2 (`[kthreadd]`) is the parent of all kernel threads.
+
+### Kernel threads
+
+Worker function:
+
+```c
+int thread_function(void *data)
+{
+    while(!kthread_should_stop()){
+        schedule();
+    }
+    return 0;
+}
+```
+
+Spawning the thread:
+
+```c
+/* Create and run the task */
+struct task_struct *task = kthread_run(
+    &thread_function, (void *)data, "mythread");
+/* */
+kthread_stop(task);
+```
+
+### Concurrent processing primitives
+
+More primitives are available for kernel development usage:
+
+- **Kernel timers**: time scheduled work
+- **Tasklets**: request a function to be executed *later*
+- **Workqueues**: dedicated thread which run functions submitted to the queue
+- **Semaphores, mutexes and locks**: Tools to avoid race-condition.
+- **Completions**: Semaphores optimized for the wait case.
+
+<!---
+If you only submit tasks to the queue occasionally, it may be more efficient to
+simply use the shared, default workqueue that is provided by the kernel.
+-->
 
 ### References
 
-- https://www.cs.columbia.edu/~smb/classes/s06-4118/l13.pdf
-- https://events.linuxfoundation.org/sites/events/files/slides/LinuxCon%20-%20TicklessKernel_revc.pdf
-- http://criticalblue.com/news/wp-content/uploads/2013/12/linux_scheduler_notes_final.pdf
+\small
+
+- <https://www.cs.columbia.edu/~smb/classes/s06-4118/l13.pdf>
+- <https://events.linuxfoundation.org/sites/events/files/slides/LinuxCon%20-%20TicklessKernel_revc.pdf>
+- <http://criticalblue.com/news/wp-content/uploads/2013/12/linux_scheduler_notes_final.pdf>
+- <http://www.ops-class.org/slides/2015-02-27-schedulingstory/>
 
 <!---
 vim: spl=en spell:
