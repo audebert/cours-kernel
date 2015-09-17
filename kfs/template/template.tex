@@ -1,0 +1,46 @@
+\documentclass[xcolor=dvipsnames]{beamer}
+\usecolortheme[named=Black]{structure}
+\useoutertheme{infolines}
+\usetheme{Berkeley}
+\makeatletter
+\beamer@headheight=1.5\baselineskip
+\logo{\Oldincludegraphics[scale=$logoscale$]{$logo$}}
+\setbeamertemplate{blocks}[rounded][shadow=true]
+\setbeamertemplate{items}[square]
+\setbeamertemplate{navigation symbols}{}
+\usepackage[$lang$]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyvrb}
+\fvset{commandchars=\\\{\}}
+\usepackage{color}
+\inputencoding{utf8}
+\usepackage{ctable}
+%%\usepackage{latexsym}
+%%\usepackage{amssymb,amsmath}
+%%\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+\else\Gin@nat@width\fi}
+\makeatother
+\let\Oldincludegraphics\includegraphics
+\renewcommand{\includegraphics}[2][]
+             {
+               \Oldincludegraphics[width=\textwidth,
+                 height=0.7\textheight,keepaspectratio]{#2}
+             }
+
+\title{$title$}
+\subtitle{$subtitle$}
+\author{$for(author)$$author$$sep$ \and $endfor$}
+\date{$date$}
+\institute{EPITA}
+
+\begin{document}
+\frame{\titlepage}
+
+$body$
+
+\end{document}
