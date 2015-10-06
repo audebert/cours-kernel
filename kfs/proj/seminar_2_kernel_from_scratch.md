@@ -72,8 +72,7 @@ This is not mandantory to perfectly fit this API but is highly recommended.
         - `flags`: access right associated to pages
 
 - `void *map_io(struct frame* pdbr, phys_t ioadddr, size_t len);`
-    - *Description*: Map an IO memory range. Be careful with `ioaddr`
-    -                alignment.
+    - *Description*: Map an IO memory range. Be careful with `ioaddr` alignment.
     - *Arguments*:
         - `pdbr`: frame which contains page directory
         - `ioaddr`: base address of IO memory range

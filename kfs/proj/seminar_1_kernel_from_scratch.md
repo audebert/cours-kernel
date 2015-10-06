@@ -51,7 +51,7 @@ Firstly, you have to configure segmentation in order to get a flat memory model.
 ### Brief
 
 In protected mode, interrupts are handled thanks to an Interrupt Descriptor
-Table. These functions allows the initialization of this structure.
+Table. These functions allow the initialization of this structure.
 
 - *File*: src/interrupts.c
 - *Header*: inc/interrupts.h
