@@ -1,7 +1,9 @@
 \documentclass[xcolor=dvipsnames]{beamer}
 \usecolortheme[named=Black]{structure}
-\useoutertheme{infolines}
-\usetheme{Berkeley}
+\usetheme{Rochester}
+\usefonttheme{professionalfonts}
+\usefonttheme{serif}
+\setbeamerfont{title}{family=\rm}
 \makeatletter
 \beamer@headheight=1.5\baselineskip
 \logo{\Oldincludegraphics[scale=$logoscale$]{$logo$}}
@@ -10,16 +12,14 @@
 \setbeamertemplate{navigation symbols}{}
 \usepackage[$lang$]{babel}
 \usepackage[utf8]{inputenc}
-\usepackage{fancyvrb}
-\fvset{commandchars=\\\{\}}
 \usepackage{color}
 \inputencoding{utf8}
 \usepackage{ctable}
-%%\usepackage{latexsym}
-%%\usepackage{amssymb,amsmath}
-%%\usepackage{array}
 \usepackage{longtable}
 \usepackage{graphicx}
+\setbeamertemplate{footline}[frame number]
+
+\renewcommand{\rmdefault}{pag}
 
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
@@ -36,7 +36,7 @@
 \subtitle{$subtitle$}
 \author{$for(author)$$author$$sep$ \and $endfor$}
 \date{$date$}
-\institute{EPITA}
+\institute{EPITA $promo$}
 
 \begin{document}
 \frame{\titlepage}
