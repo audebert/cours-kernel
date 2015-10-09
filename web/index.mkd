@@ -29,6 +29,9 @@ Both projects (and their subprojects) are mandatory:
 - [Linux](seminar_0_linux.html)
 - [KFS](seminar_0_kfs.html)
 
+Defense: 31 October 2015 (dates currently on the intranet are wrong). We expect
+you to send us your work before this date.
+
 ## Kernel Programming - II
 
 ### Workshop: `chiffrefs`
@@ -60,6 +63,8 @@ Both projects (and their subprojects) are mandatory:
 - [Linux](seminar_1_linux.html)
 - [KFS](seminar_1_kfs.html)
 
+Defense: 31 November 2015. We expect you to send us your work before this date.
+
 ## Kernel Programming - III
 
 ### Workshop
@@ -70,6 +75,8 @@ Both projects (and their subprojects) are mandatory:
 
 - [Linux (to be announced later)](seminar_2_linux.html)
 - [KFS](seminar_2_kfs.html)
+
+Defense: 19 December 2015. We expect you to send us your work before this date.
 
 ## Contact us!
 
