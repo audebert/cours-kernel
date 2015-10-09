@@ -70,18 +70,18 @@ dire étant donné qu'il peut ne y avoir de lien direct entre un driver dans lin
 et un périphérique. Certains drivers sont génériques et peuvent supporter
 plusieurs périphériques différents.
 
-Concernant les architectures, il y a 31 sous-dossiers dans le dossier arch/,
+Concernant les architectures, il y a 32 sous-dossiers dans le dossier arch/,
 mais ça ne veut pas dire grand chose, étant donné toutes les variantes et
 micro-architectures qui peuvent existent pour chaque plateform.
 
 arm:
-    - 65 micro-architectures
-    - 109 boards de defconfig
+    - 69 micro-architectures
+    - 110 boards de defconfig
 
 Une architecture, ou un périphérique, est supportée tant qu'il reste au moins
 un utilisateur du système, ou que ça ne pose pas de problème majeur de
 conserver le support d'un système. Par exemple le support de i386, qui pour
-rappel est sorti en 1986 et tournait à 16MHz a été enlevé pour linux 3.8, dans
+rappel est sorti en 1986 et tournait à 8MHz a été enlevé pour linux 3.8, dans
 le but de simplifier la gestion des processeurs x86.
 
 http://lkml.iu.edu/hypermail/linux/kernel/1212.1/01152.html

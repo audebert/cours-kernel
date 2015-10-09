@@ -1,6 +1,6 @@
 % Linux - Introduction
 % Rémi Audebert - Pierre Surply
-% 2015-05-21
+% 2015-10-08
 
 # Introduction
 
@@ -46,8 +46,8 @@ The kernel is the part of the system that:
 ### Current status
 
 - GPLv2
-- Latest stable release: 4.0.4 (2015-05-17)
-- Latest development release: 4.1-rc4 (2015-05-18)
+- Latest stable release: 4.2.3 (2015-10-03)
+- Latest development release: 4.3-rc4 (2015-10-rc4)
 - Regular 2-3 month releases:
     - deliver stable updates
     - significant new features
