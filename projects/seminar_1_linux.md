@@ -20,48 +20,7 @@ To: halfr@lse.epita.fr, surply@lse.epita.fr
 Subject: [KERNEL] LOGIN_X LOGIN_Y - PROJECT NAME
 ```
 
-Part 1 - chiffrefs
-------------------
-
-The aim of this project is to create a new file system for the Linux kernel.
-
-You must:
-
-- Create a new file system.
-- Send us a tarball of your module by email.
-
-Your filesystem must work as an overlay where each byte wrote to a file is
-rotated by a number given on the option string, when the filesystem is mounted.
-
-Usage:
-
-```bash
-$ insmod chiffrefs.ko
-$ mkdir chiffred clear
-$ mount chiffred clear -t chiffrefs -o n=13
-$ echo -n foobar >clear/test
-$ cat clear/test
-foobar
-$ cat chiffred/test
-sbbone
-```
-
-You will learn:
-
-- How to create as new file system.
-- How to use files in kernel space.
-
-Grading:
-
-- Did you send us your module?
-- Does your file system:
-
-    - work as expected?
-    - support directories?
-    - support basic file operations such as read and write?
-    - support size information?
-
-Part 2 - tty driver
+Part 1 - tty driver
 -------------------
 
 The goal of this project is to create a kernel driver for the 8250 serial
@@ -103,6 +62,47 @@ Reference:
 Bonus:
 
 - Integrate your driver with the `tty` subsystem.
+
+Part 2 - chiffrefs
+------------------
+
+The aim of this project is to create a new file system for the Linux kernel.
+
+You must:
+
+- Create a new file system.
+- Send us a tarball of your module by email.
+
+Your filesystem must work as an overlay where each byte wrote to a file is
+rotated by a number given on the option string, when the filesystem is mounted.
+
+Usage:
+
+```bash
+$ insmod chiffrefs.ko
+$ mkdir chiffred clear
+$ mount chiffred clear -t chiffrefs -o n=13
+$ echo -n foobar >clear/test
+$ cat clear/test
+foobar
+$ cat chiffred/test
+sbbone
+```
+
+You will learn:
+
+- How to create as new file system.
+- How to use files in kernel space.
+
+Grading:
+
+- Did you send us your module?
+- Does your file system:
+
+    - work as expected?
+    - support directories?
+    - support basic file operations such as read and write?
+    - support size information?
 
 Conclusion
 ----------
