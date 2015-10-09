@@ -1,6 +1,6 @@
 % Linux - Syscalls
 % Rémi Audebert - Pierre Surply
-% 2015-05-22
+% 2015-10-09
 
 # Generalities
 
@@ -93,6 +93,8 @@ A context is:
 - The state of a process (including threads):
     - Memory state: stack, page tables, etc.
     - CPU state: registers, caches, etc.
+    - Process scheduler state
+    - ...
 
 ## vdso in action
 
@@ -126,9 +128,10 @@ Use the `SYSCALL_DEFINEx(syscall, ...)` macros anywhere in Linux code.
 
 These macros expands to:
 
-- `SYSCALL_METADATA(syscall, ...)` generate metadata used in `FTRACE` tracing framework
-- `__SYSCALL_DEFINEx(syscall, ...)` more function definition expansion
-- Ultimatly: `asmlinkage long SyS_syscall(..)`
+- `SYSCALL_METADATA(syscall, ...)` generate metadata used in the `FTRACE`
+  tracing framework.
+- `__SYSCALL_DEFINEx(syscall, ...)` more function definition expansion.
+- Ultimatly expand to: `asmlinkage long SyS_syscall(..)`
 - `asmlinkage` means that arguments are on the stack.
 
 ## Example
@@ -150,6 +153,17 @@ In `kernel/signal.c`:
 
 ## Side notes
 
+### current
+
+\small
+
+```c
+#include <asm/current.h>
+...
+pr_debug("The process is \"%s\" (pid %i)\n",
+	 current->comm, current->pid);
+```
+
 ### signal_pending
 
 \small
@@ -162,26 +176,15 @@ static inline int signal_pending(struct task_struct *p)
 }
 ```
 
-### current
-
-\small
-
-```c
-#include <asm/current.h>
-...
-pr_debug("The process is \"%s\" (pid %i)\n",
-	 current->comm, current->pid);
-```
-
 ### schedule()
 
 \small
 
-Pick the next process to run.
+Ask the scheduling subsystem to pick the next process to run.
 
 ## The syscalls tables
 
-See `arch/x86/syscalls/syscall_{32,64}.tbl`.
+See `arch/x86/entry/syscalls/syscall_{32,64}.tbl`.
 
 ### `syscall_32.tbl`
 

@@ -1,6 +1,6 @@
 % Linux - Misc devices
 % Rémi Audebert - Pierre Surply
-% 2015-05-22
+% 2015-10-09
 
 # Misc devices
 
@@ -68,11 +68,10 @@ static struct file_operations mymisc_fops = {
 };
 ```
 
-
 ### `open()` and `release()`
 
 ```C
-int mymisc_open(struct inot *i, struct file *f);
+int mymisc_open(struct inode *i, struct file *f);
 ```
 
 - Called when user space opens `/dev/mymisc`.
