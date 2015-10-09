@@ -4,24 +4,35 @@ Kernel Programming I - Workshop
 Getting started
 ---------------
 
-### Build a busybox
+### Build a busybox environment
 
-[Busybox](http://www.busybox.net/) is a simple user space. Building it will give you:
+[Busybox](http://www.busybox.net/) is a simple user space. Using it will give you:
 
 - An `init` program, the first program ran by the kernel.
 - Simple versions of the usual user land tools (`cd`, `cat`, `insmod`, etc.)
+
+We recommend you using it instead of a full-featured Linux distribution because
+it is simpler to setup and give you reduced boot-time.
 
 ```bash
 git clone git://git.busybox.net/busybox
 make defconfig # All features, no debug
 make menuconfig # Setup static linking
 make # Build
-make install
+make install # Copy generated files to the _install/ directory
 ```
+
+We need to link busybox staticaly because the system we are building does not
+have any dynamic linking support.
 
 ### Build a rootfs
 
-The rootfs is the first file system, loaded by the kernel on `/`.
+The rootfs is the first file system, loaded by the kernel on `/`. The only
+thing Linux requires is that it contains a init program.
+
+There are multiple ways to provide a rootfs, e.g. a floopy disk, a hard drive, a
+network filesystem (NFS), a virtual file system (virtio-9p), etc. The simplest
+solution is to use a file containing disk image formatted as a ext4 filesystem.
 
 ```bash
 dd if=/dev/zero of=disk.img bs=1M count=16
@@ -36,6 +47,8 @@ echo 'proc    /proc   proc    defaults' >> etc/fstab
 echo 'sysfs   /sys    sysfs   defaults' >> etc/fstab
 echo 'mount -a' >> etc/init.d/rcS
 chmod +x etc/init.d/rcS
+cd ..
+umount mnt # flushes our changes to the file on the disk
 ```
 
 ### Build Linux
@@ -48,6 +61,10 @@ make
 
 ![Somewhat relevant](http://imgs.xkcd.com/comics/compiling.png)
 
+While your kernel compiles, you can watch this very interestring video from Greg
+Kroah-Hartman about writing and sending your first patch to the Linux kernel
+mailing lists: [Write and Submit your first Linux kernel Patch](https://www.youtube.com/watch?v=LLBrBBImJt4).
+
 ### Start qemu
 
 ```bash
@@ -56,8 +73,9 @@ qemu-system-x86_64 -kernel /path/to/linux/arch/x86/boot/bzImage -hda /path/to/ro
 
 ### Debugging with Qemu
 
-- Compile linux with debug info
-- Run QEMU with a gdb server: `-s -S`
+- Compile linux with debug info (search on the configuration for the right
+  option!).
+- Run QEMU with a gdb server: `-s`
 - Run gdb with your kernel binary: `gdb vmlinux`
 - Once in gdb, connect to QEMU: `target remote localhost:1234`
 - Add some breakpoints: `b my_symbol`
@@ -68,9 +86,22 @@ Getting things done
 
 ### RootNFS
 
+There are multiple problems with using a disk image as a rootfs:
+
+- You have to make sure that the content of the disk image up to date, i.e.
+  Linux should not keep the modification in cache.
+- When the virtual machine is started the disk image is read-only, so if you
+  want to change a file you have to restart the VM.
+
+Using a NFS export as rootfs should make your life easier has it has none the
+problems cited above.
+
+Steps:
+
 - Create a rootfs, the one from busybox is a good start.
 - Setup a NFS server, for that see your distribution's manual.
-- Edit `/etc/exports` to export `/path/to/your/rootfs`
+- Edit `/etc/exports` to export `/path/to/your/rootfs`. Depending on your setup,
+  you might need to add the `insecure` flag to the export flags.
 - Enable the exports: ``exportfs -av``
 - Update the kernel command line you specify in `qemu`:
 
@@ -78,11 +109,16 @@ Getting things done
 root=/dev/nfs nfsroot=10.0.2.2:/path/to/rootfs rw ip=10.0.2.15::10.0.2.1:255.255.255.0
 ```
 
+Here are a few notes:
+
+- Notice that we replaced `/dev/sda` by `/dev/nfs`, it is a special path that
+  request NFS to be used for the rootfs.
 - By default, `qemu` provides a user mode network stack, which requires no
   administrator privilege to run. Some network protocols won't work, such as
   `ICMP` (you won't be able to `ping` the vm).
-- `10.0.2.2` is the default IP for the host machine, it is only visible from
-  the virtual machine.
+- `10.0.2.2` is the default IP address for the host machine, it is only visible
+  from the virtual machine.
+- `10.0.2.2` is the IP address to contact the host system.
 - `rw` means that file system is writeable.
 - `ip=...` defines the network configuration for the emulated network interface.
 
@@ -100,9 +136,10 @@ Note:
 - The init program must never exit. This is the only thing the kernel expects
   from this process.
 
-### `sys_hello`
+### The `hello` syscall
 
-Write a syscall which, when called, prints "hello, world!" on the console.
+Write a syscall which, when called by a userspace program, prints "hello,
+world!" to the console.
 
 Test your syscall in your init.
 
