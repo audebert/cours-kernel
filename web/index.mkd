@@ -1,10 +1,9 @@
 Kernel Programming
 ==================
 
-Workshops
----------
+## Kernel Programming - I
 
-### Seminar 0
+### Workshop
 
 - [Linux Workshop 0](workshop_0_bootstrap.html)
 - Kernel from scratch: make a kernel bootable on an i386 emulator that prints
@@ -23,9 +22,16 @@ Workshops
 
 	- For more information, follow the slides from Lecture #1.
 
-### Seminar 1:
+### Projects
 
-#### `chiffrefs`
+Both projects (and their subprojects) are mandatory:
+
+- [Linux](seminar_0_linux.html)
+- [KFS](seminar_0_kfs.html)
+
+## Kernel Programming - II
+
+### Workshop: `chiffrefs`
 
 Write an overlay filesystem where each byte wrote to a file is rotated by a
 number given on the option string.
@@ -43,8 +49,35 @@ $ cat chiffred/test
 sbbone
 ```
 
-Contact
--------
+Writing a filesystem module from scratch is not an easy task. If you want
+inspiration, we recommend you to look at the implementation of the `ramfs` and
+`overlayfs` filesystems.
+
+### Projects
+
+Both projects (and their subprojects) are mandatory:
+
+- [Linux](seminar_1_linux.html)
+- [KFS](seminar_1_kfs.html)
+
+## Kernel Programming - III
+
+### Workshop
+
+### Projects
+
+Both projects (and their subprojects) are mandatory:
+
+- [Linux (to be announced later)](seminar_2_linux.html)
+- [KFS](seminar_2_kfs.html)
+
+## Contact us!
+
+### Emails
 
 - halfr@lse.epita.fr
 - surply@lse.epita.fr
+
+### IRC
+
+Come have a chat on [#k@irc.rezosup.org](irc://#k@irc.rezosup.org).
