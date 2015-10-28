@@ -1,8 +1,8 @@
-% Linux - Misc devices
+% Linux - Introduction to modules
 % Rémi Audebert - Pierre Surply
 % 2015-10-09
 
-# Misc devices
+# The "misc" device class
 
 ### Description
 
@@ -12,6 +12,7 @@
 	- Various mice
 	- Watchdog
 	- Clocks
+        - Control device for other modules
 	- ...
 
 - They have a name.
@@ -112,3 +113,5 @@ ssize_t mymisc_write(struct file *file,
 - Called when user space uses the `write()` syscall on the device.
 - The opposite of `read`, must read at most `count` bytes from `buf` and write
   it to the device, update `off` and return the number of bytes written.
+
+<!--- vim: set spell: -->
