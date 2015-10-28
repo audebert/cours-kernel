@@ -47,7 +47,7 @@ static int __init mymisc_init(void)
 	int r;
 
 	r = misc_register(&mymisc);
-	if (ret < 0) {
+	if (r < 0) {
 		pr_warn("misc_register() failed: %d\n", r);
 		return r;
 	}
