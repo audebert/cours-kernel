@@ -1,10 +1,29 @@
 % Linux - Devices
 % Rémi Audebert - Pierre Surply
-% 2015-06-05
+% 2015-10-29
+
+# Linux Device Model
+
+### Why a device model?
+
+- Maximization of portability amond the platforms and architectures. Example:
+    - The same USB device driver can be usable on a x86 PC or an ARM platform.
+- Minimization of code duplication: provide common facilities for refcounting
+- To categorize devices by their class, such as input devices.
+- To have the possibility to enumerate the currently available devices,
+  their dependencies and capabilities
+
+### The Device Model
+
+- Switching the slides to free-electrons.com kernel slides, section `Kernel and
+  Device Drivers` (130).
 
 # Devices
 
 ### Types of devices
+
+The kernel is capable of adding or removing almost any device in the running
+system, e.g. `Documentation/cpu-hotplug.txt`.
 
 There are 4 major types of devices:
 
@@ -12,6 +31,8 @@ There are 4 major types of devices:
 - Block devices (*blkdev*)
 - Network devices (*netdev*)
 - Pseudo or virtual devices
+
+More exist, e.g. the cpu bus.
 
 ### Major and minor numbers
 
@@ -27,6 +48,22 @@ There are 4 major types of devices:
 - You should really use the `MKDEV` macros.
 
 - A list of known major and minor numbers available: `Documentation/devices.txt`.
+
+### Types of devices (2)
+
+- Discoverable
+    - The operating system can enumerate the devices, at boot time, or run time.
+    - Require enumerable buses: PCI, USB, SMBus
+    - It "Just Works" or "Plug'n Play"
+- Not discoverable
+    - We have to tell the operating system.
+    - For board specific hardware and devices.
+    - How to do that?
+        - Platform drivers: `Documentation/driver-model/platform.txt`
+        - ACPI based enumeration: `Documentation/acpi/enumeration.txt`
+        - Device tree: `Documentation/devicetree/`
+
+<!--- ACPI 5: UartSerialBus, I2cSerialBus, SpiSerialBus, GpioIo, GpioInt -->
 
 ### Creating device nodes
 
@@ -65,7 +102,8 @@ crw-r--r-- 1 root root 1, 5 Oct 10 22:00 myzero
 
 ### Char devices
 
-- Switching to free-electrons.com kernel slides, section "Character drivers".
+- Switching to free-electrons.com kernel slides, section "Character drivers"
+    (200).
 
 ### Block devices
 
@@ -88,10 +126,8 @@ crw-r--r-- 1 root root 1, 5 Oct 10 22:00 myzero
     - Merges coalescing requests into one
     - Sorts requests
     - Provides both good read and write performance
-- They are called "escalators" because of the movement of the head on a
-  hard-drive.
-- In Linux: `block/\*-iosched.c`:
-    - `cfq-iosched.c`
+- In Linux: `block/*-iosched.c`:
+    - `cfq-iosched.c`, an "escalator" scheduler
     - `deadline-iosched.c`
     - `noop-iosched.c`
 
@@ -171,18 +207,6 @@ MODALIAS=usb:v046DpC03Ed2000dc00dsc00dp00ic03isc01ip02
 - `udevadm monitor`: Listens to the kernel uevents, and envents sent by udev
   rules
 
-# The Device Model
+###
 
-### Why a device model?
-
-- Maximization of portability amond the platforms and architectures. Example:
-    - The same USB device driver can be usable on a x86 PC or an ARM platform
-- Minimization of code duplication: provide common facilities for refcounting
-- To categorize devices by their class, such as input devices.
-- To have the possibility to enumerate the currently available devices,
-  their dependencies and capabilities
-
-### The Device Model
-
-- Switching the slides to free-electrons.com kernel slides, section `Kernel and
-  Device Drivers`.
+\centering \Huge Questions?
