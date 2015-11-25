@@ -1,6 +1,5 @@
 % Linux - VFS
-% Rémi Audebert (LSE 2016)
-% 2015-06-04
+% Rémi Audebert
 
 # Introduction
 
@@ -28,7 +27,7 @@
 - Each Linux distribution chooses how to organize it.
 
     - Linux foundations hierarchy:
-      http://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.txt
+      <http://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.txt>
     - Systemd's modernized version is described in `file-hierarchy(7)`.
 
 - Userspace interacts with the VFS using a set of syscalls: `open(2)`,
@@ -37,16 +36,28 @@
 ### Changing `/`
 
 - `chroot(2)` can be used to change the root of the filesystem hierarchy of the
-  current process. This is the syscall used by `chroot(1)` and
-  `switch_root(8)`.
+current process. This is the syscall used by `chroot(1)` and `switch_root(8)`.
 
-#### Namespaces
+#### Prototypes
 
-- A process can get a completely different set of mount points by an invocation
-  of the `clone(2)` syscall with the `CLONE_NEWNS` flag set. This is called
-  changing of mount namespace.
-- The list of all filesystems currently mounted can be seen in
-  `/proc/[pid]/mounts`.
+```c
+int chroot(const char *path);
+```
+
+```bash
+$ switch_root newroot init
+```
+
+### Namespaces
+
+- `clone(2)` with the `CLONE_NEWNS` flag: the child process get a modifiable
+  copy of the parent's mount points. This is called changing of mount
+  namespace.
+- `clone(2)` with the `CLONE_FS` flag: the child process get a strict copy
+  of the parent's mount points. Calls to `chroot(2)` or `chdir(2)` from the
+  parent or the child also affect other processes.
+- The list of filesystems currently mounted for the current namespace can be
+  seen in `/proc/[pid]/mounts`.
 - More namespaces exist: `PID`, `USER`, `NET`, `IPC` and `UTS`.
 - For more information, see `namespaces(7)`
 
@@ -104,17 +115,17 @@ Answer: foo is a symlink to a directory.
 ### Mounts
 
 - The `mount(1)` utility can be used to display the list of mount points in
-  the current process' namespace.
+  the current process' namespace, and create new mount entries.
+- The underlying syscall is `mount(2)`.
 - A mount is composed of :
 
     - Filesystem type
-    - Source (may be optional)
+    - Source (may be unused)
     - Mount point
     - Mount flags
-    - Mount data (optional)
+    - Mount data/options (optional)
 
 <!---
-The filesystem
 -->
 
 #### Some `mount(2)` options
@@ -167,8 +178,8 @@ other internal data structures.
 - dentry cache (`dcache`): a view of the currently accessed paths.
 - inode caches: if an inode can be uniquely identified by an `int`, make a
   cache out of it.
-- block device caches: keep pages of data in RAM instead of fetching them at
-  each request.
+- block device caches (page cache): keep pages of data in RAM instead of
+  fetching them at each request.
 
 <!---
 https://www.kernel.org/doc/Documentation/filesystems/vfs.txt
@@ -186,15 +197,20 @@ https://www.kernel.org/doc/Documentation/filesystems/vfs.txt
 
 \small
 
-```C
+```c
+/* my_fs.c */
 static struct file_system_type fs_type = {
-        .owner          = THIS_MODULE,
-        .name           = "fs",
-        .mount          = fs_mount,
-        .kill_sb        = fs_kill_sb,
-        .fs_flags       = FS_USERNS_MOUNT,
+        .owner    = THIS_MODULE,
+        .name     = "fs",
+        .mount    = fs_mount,
+        .kill_sb  = fs_kill_sb,
+        /* Can be mounted by userns root */
+        .fs_flags = FS_USERNS_MOUNT,
 };
 
+static int __init fs_init(void) {
+        return register_filesystem(&fs_type);
+}
 ```
 
 ### `fs_mount()`
@@ -203,7 +219,8 @@ Setups the super block, returns the root `dentry`.
 
 \small
 
-```C
+```c
+/* my_fs.c */
 static struct dentry *fs_mount(
                      struct file_system_type *fs_type,
                      int flags, const char *dev_name,
@@ -211,7 +228,7 @@ static struct dentry *fs_mount(
 {
         struct super_block *sb;
 
-        /* No error handling */
+        /* find or create a superblock */
         sb = sget(fs_type, NULL, set_anon_super, flags,
                   NULL);
         fs_super_fill(sb);
@@ -220,11 +237,20 @@ static struct dentry *fs_mount(
 }
 ```
 
+\normalsize No error handling!
+
+<!---
+set_anon_super: no underlying block device, this is a pseudo device
+-->
+
 ### `fs_mount()` (refactored)
+
+The kernel sources have many shortcuts already written, for example in
+`fs/super.c`:
 
 \small
 
-```C
+```c
 static struct dentry *fs_mount(
                      struct file_system_type *fs_type,
                      int flags, const char *dev_name,
@@ -254,22 +280,23 @@ int fs_super_fill(struct super_block *sb,
         sb->s_magic = MYFS_SUPER_MAGIC;
         sb->s_op = &super_sops;
 
-        inode = inode_get(sb, NULL);
+        inode = fs_inode_get(sb, NULL, NULL);
         sb->s_root = d_make_root(inode);
         if (!sb->s_root)
-            return -ENOMEM;
+                return -ENOMEM;
         return 0;
 }
 ```
 
 ### `struct super_operations`
 
-File system wide configuration.
+File system wide configuration. Default operations from `fs/libfs.c` can be
+used.
 
 \small
 
-```C
-static const struct super_operations super_operations = {
+```c
+static const struct super_operations super_ops = {
         .statfs = simple_statfs,
         /* sync_fs */
         /* {alloc,destroy,dirty,drop,evict}_inode */
@@ -281,10 +308,9 @@ static const struct super_operations super_operations = {
 ### `fs_inode_get()` (1/2)
 
 Creates a new inode.
-
 \small
 
-```C
+```c
 struct inode *fs_inode_get(struct super_block *sb,
                const struct inode *dir,
                umode_t mode)
@@ -293,7 +319,7 @@ struct inode *fs_inode_get(struct super_block *sb,
         struct inode *inode = new_inode(sb);
 
         if (!inode)
-            return ERR_PTR(-ENOMEM);
+                return ERR_PTR(-ENOMEM);
 
         inode->i_ino = get_next_ino();
         inode_init_owner(inode, dir, S_IFDIR);
@@ -320,7 +346,7 @@ struct inode *fs_inode_get(struct super_block *sb,
             set_nlink(inode, 2);
             break;
     case S_IFREG: case S_IFLNK:
-           /* ... */
+            /* ... */
             break;
     }
 
@@ -328,14 +354,20 @@ struct inode *fs_inode_get(struct super_block *sb,
 }
 ```
 
+<!---
+IFREG: regular file
+-->
+
 ### Going further
 
 - This file system can be mounted, but does not have any useful feature.
 - We must fill all the necessary `{file,inode,dir,symlink}_operations`
   callbacks in order to make it do something useful.
-- `fs/ramfs/inode.c` is one of the most simple file system in Linux
-- `fs/libfs.c` contains a wide range of general purpose, default behavior
-   operations
+- Where to see what to do?
+    - `fs/ramfs/inode.c` is one of the simplest file system in Linux.
+    - `fs/overlayfs/` is also pretty small.
+    - `fs/libfs.c` contains a wide range of general purpose, default behavior
+       operations.
 
 ### FUSE: Filesystem in Userspace
 
@@ -344,23 +376,23 @@ struct inode *fs_inode_get(struct super_block *sb,
   interface.
 - It consists of a kernel module (`fuse.ko`), a userspace library
   (`libfuse.so`) and mount utilities (`fusermount`, `mount.fuse`).
-- Binding are available for other languages, eg. python.
+- Binding are available for other languages, eg. Python.
 - Projects using FUSE:
 
     - gdrivefs (Google Drive)
     - rar2fs (rar archives)
     - encfs (encrypted files)
-    - ftpfs
-    - sshfs
+    - ftpfs (ftp directly in the VFS)
+    - sshfs (remove filesystem using ssh)
 
-- http://fuse.sourceforge.net/
+- <http://fuse.sourceforge.net/>
 
 ### CUSE: Character device in Userspace
 
-- Userspace can create char devices.
-- Simplify driver development.
-- Slow and limited.
+- Userspace can create char devices!
 - Based on the fuse kernel code (`fs/fuse/cuse.c`).
+- Simplify driver development.
+- But slow and limited.
 
 # Assignment
 
