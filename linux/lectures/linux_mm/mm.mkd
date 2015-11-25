@@ -1,6 +1,5 @@
 % Linux - Memory Management
 % Rémi Audebert
-% 2015-06-18
 
 # Userspace view of memory management
 
