@@ -1,8 +1,8 @@
-# Kernel Programming II - Kernel From Scratch
+# Kernel Programming III - Kernel From Scratch
 
 ## Introduction
 
-Here is the assigments for *Kernel Programming II - Kernel From Scratch*.
+Here is the assigments for *Kernel Programming III - Kernel From Scratch*.
 
     To: halfr@lse.epita.fr, surply@lse.epita.fr`
     Subject: [KERNEL] LOGIN_X LOGIN_Y - KFS
