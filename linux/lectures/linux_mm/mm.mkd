@@ -1,29 +1,36 @@
 % Linux - Memory Management
 % Rémi Audebert
-% 2015-06-18
 
 # Userspace view of memory management
 
-### Memory in `/dev/`
+### Memory in `/dev/`, *mem(4)*
+
+- Char devices
 
 #### `/dev/mem`
 
-- Image of the main physical memory
+- View of the physical memory
+- Addresses are interpreted as physical memory addresses
 - Can be used to examine and patch the system
-- Char device, addresses are interpreted as physical memory addresses.
+
+. . .
 
 #### `/dev/kmem`
 
-- Image of the kernel virtual memory
+- View of the virtual memory
+- Addresses are interpreted as virtual memory addresses
+
+. . .
 
 #### `/dev/port`
 
-- Image of the I/O ports
+- View of the I/O ports
+- Addresses are interpreted as I/O space addresses
 
 ### `/proc/iomem`
 
-- Displays memory registered by the kernel using `request_mem_region()`.
-- Prevents multiple registration.
+- Displays memory registered by the kernel using `request_mem_region()`
+- Prevents multiple registration and allocation
 
 ```
 $ cat /proc/iomem
@@ -35,10 +42,28 @@ $ cat /proc/iomem
 ...
 ```
 
+<!---
+Exemple d'utilisation
+
+kexec_load(2)
+
+       KEXEC_ON_CRASH (since Linux 2.6.13)
+              Execute  the  new  kernel automatically on a system crash.  This
+              "crash kernel" is loaded into an area of reserved memory that is
+              determined  at  boot  time using the craskkernel kernel command-
+              line  parameter.   The  location  of  this  reserved  memory  is
+              exported  to  user  space  via the /proc/iomem file, in an entry
+              labeled "Crash kernel".  A user-space application can parse this
+              file  and  prepare  a  list of segments (see below) that specify
+              this reserved memory as destination.  If this flag is specified,
+              the kernel checks that the target segments specified in segments
+              fall within the reserved region.
+-->
+
 ### `/proc/ioports`
 
 - Displays I/O ports registered by the kernel using `request_region()`.
-- Prevents multiple registration.
+- Prevents multiple registration and allocation.
 
 ```
 $ cat /proc/ioports
@@ -55,18 +80,42 @@ $ cat /proc/ioports
 ...
 ```
 
-### Linux memory features
+<!---
+IOMMU?
+
+Intel has published a specification for IOMMU technology as Virtualization
+Technology for Directed I/O, abbreviated VT-d.
+-->
+
+### Linux virtual memory features (1)
 
 #### Swap
 
 When the kernel has to free some memory space, it copies pages of memory to a
-preconfigured space on a hard disk. The combined sizes of the physical memory
-and the swap space is the amount of virtual memory available.
+preconfigured space on a hard disk.
+
+<!--- The combined sizes of the physical memory
+and the swap space is the amount of virtual memory available. -->
+
+. . .
+
+#### Out-of-memory killer
+
+No available memory? Linux will try to kill a task.
+
+- [`mm/oom_kill.c`](http://lxr.free-electrons.com/source/mm/oom_kill.c)
+
+<!--- When the system is under extreme memory pressure, the OOM killer will try to
+kill a task in order to free up memory. -->
+
+. . .
 
 #### zram
 
 Virtual memory can be compressed to reduce the in-memory footprint and reduce
 the need for swapping.
+
+- [`Documentation/blockdev/zram.txt`](https://www.kernel.org/doc/Documentation/blockdev/zram.txt)
 
 <!---
 Even when the cost of RAM is low, zram still offers advantages for low-end
@@ -78,18 +127,16 @@ Google uses zram in Chrome OS and it is also available as an option for Android
 4.4 devices.
 -->
 
-### Out-of-memory killer
 
-When the system is under extreme memory pressure, the OOM killer will try to kill
-a task in order to free up memory.
-
-### Advanced features
+### Linux virtual memory features (2)
 
 #### Kernel same-page merging
 
 A kernel process (`ksmd`) periodically scans those areas of user memory which
 looking for pages of identical content which can be replaced by a single
 write-protected page.
+
+- [`Documentation/vm/ksm.txt`](https://www.kernel.org/doc/Documentation/vm/ksm.txt)
 
 <!---
 The KSM daemon ksmd periodically scans those areas of user memory which
@@ -103,23 +150,35 @@ by sharing the data common between them.  But it can be useful to any
 application which generates many instances of the same data.
 -->
 
+. . .
+
 #### Overcommit
 
 Overcommit refers to the practice of giving out virtual memory with no
 guarantee that physical storage for it exists.
 
+- [`Documentation/vm/overcommit-accounting`](https://www.kernel.org/doc/Documentation/vm/overcommit-accounting)
+
 <!---
 http://www.etalabs.net/overcommit.html
 -->
+
+. . .
+
+#### Frontswap
+
+Advanced swap to RAM-like devices framework.
+
+- [`Documentation/vm/frontswap.txt`](https://www.kernel.org/doc/Documentation/vm/frontswap.txt)
 
 # Programs in memory
 
 ### Memory management requirements
 
-- Linux was created for systems that include a MMU.
-- Linux has limited support for memory mapping when no mmu is present.
+- Linux was created for systems that include a Memory Management Unit (MMU)
+- Linux has limited support for memory mapping when no mmu is present
 - The µClinux project aims to support those systems, for example
-  microcontrollers (ARM Cortex-M3/4) or softcore CPU (Altera NIOS II).
+  microcontrollers (ARM Cortex-M3/4) or softcore CPU (Altera NIOS II)
 
 ### Kernel space and user space (32bit)
 
@@ -140,11 +199,11 @@ http://www.etalabs.net/overcommit.html
     - Executable code: `.text`
     - Read-only data: `.rodata`
     - Read-write data: `.data`
-    - Libraries
+    - Mmap'd files (libraries or anonymous storage)
     - Stack
     - Heap
 
-- All of these may be shared.
+- All of these may be shared between tasks.
 
 ### Virtual memory areas
 
@@ -194,7 +253,7 @@ vvar: http://lxr.free-electrons.com/source/arch/x86/include/asm/vvar.h
 
 ### When are VMA created?
 
-- At program startup.
+- At program startup, on a `execve(2)`.
 - A call to `mmap(2)`
 
 ### Address space layout randomization
